@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { createAnonymousClient } from "@/lib/supabase/server"
 import type { FormSubmission } from "@/features/forms/types/form"
 
 export async function POST(
@@ -10,7 +10,8 @@ export async function POST(
     const { slug } = await params
     const body: FormSubmission = await request.json()
 
-    const supabase = await createClient()
+    // Use anonymous client for public form submissions (no authentication required)
+    const supabase = createAnonymousClient()
 
     // Verify form exists and is published
     const { data: form, error: formError } = await supabase
@@ -21,45 +22,63 @@ export async function POST(
       .single()
 
     if (formError || !form) {
+      console.error("Form lookup error:", formError)
       return NextResponse.json(
-        { error: "Form not found or not published" },
+        { 
+          error: "Form not found or not published",
+          details: formError?.message || "Unknown error",
+          code: formError?.code || "UNKNOWN"
+        },
         { status: 404 }
       )
     }
 
-    // Create response
-    const { data: response, error: responseError } = await supabase
-      .from("form_responses")
-      .insert({
-        form_id: form.id,
-        source: body.source,
+    // Create response using SECURITY DEFINER function to bypass RLS issues
+    const { data: responseData, error: responseError } = await supabase
+      .rpc("create_public_form_response", {
+        p_form_id: form.id,
+        p_source: body.source,
       })
-      .select()
-      .single()
 
-    if (responseError || !response) {
+    if (responseError || !responseData) {
+      console.error("Failed to create response:", responseError)
       return NextResponse.json(
-        { error: "Failed to create response" },
+        { 
+          error: "Failed to create response",
+          details: responseError?.message || "Unknown error",
+          code: responseError?.code || "UNKNOWN"
+        },
         { status: 500 }
       )
     }
 
-    // Create answers
-    const answers = body.answers.map((answer) => ({
-      response_id: response.id,
-      question_id: answer.questionId,
+    const responseId = responseData as string
+
+    // Prepare answers as JSONB for the function
+    const answersJson = body.answers.map((answer) => ({
+      questionId: answer.questionId,
       answer: Array.isArray(answer.answer)
         ? JSON.stringify(answer.answer)
         : answer.answer,
     }))
 
-    const { error: answersError } = await supabase
-      .from("form_answers")
-      .insert(answers)
+    // Create answers using SECURITY DEFINER function
+    const { error: answersError } = await supabase.rpc(
+      "create_public_form_answers",
+      {
+        p_response_id: responseId,
+        p_answers: answersJson as any,
+      }
+    )
 
     if (answersError) {
+      console.error("Failed to save answers:", answersError)
       return NextResponse.json(
-        { error: "Failed to save answers" },
+        { 
+          error: "Failed to save answers",
+          details: answersError?.message || "Unknown error",
+          code: answersError?.code || "UNKNOWN"
+        },
         { status: 500 }
       )
     }

@@ -13,6 +13,11 @@ export interface FormQuestion {
   created_at?: string
 }
 
+export type FormTheme = "light" | "dark" | "auto"
+export type FormLayout = "centered" | "wide" | "full"
+export type FormFontFamily = "inter" | "roboto" | "open-sans" | "lato" | "montserrat" | "poppins"
+export type ButtonStyle = "default" | "rounded" | "pill" | "outline"
+
 export interface Form {
   id: string
   user_id: string
@@ -21,6 +26,20 @@ export interface Form {
   slug: string
   status: FormStatus
   color: string
+  theme?: FormTheme
+  layout?: FormLayout
+  font_family?: FormFontFamily
+  background_color?: string
+  button_style?: ButtonStyle
+  button_color?: string
+  show_progress?: boolean
+  // Branding and Contact
+  company_name?: string
+  company_logo_url?: string
+  contact_email?: string
+  contact_phone?: string
+  website_url?: string
+  show_branding?: boolean
   created_at: string
   updated_at: string
 }

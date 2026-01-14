@@ -264,3 +264,77 @@ export async function getFormResponses(
     total: count || 0,
   }
 }
+
+export interface ResponseTrend {
+  date: string
+  qr: number
+  web: number
+  total: number
+}
+
+export async function getResponseTrends(
+  formId: string,
+  startDate?: Date,
+  endDate?: Date,
+  source?: "qr" | "web"
+): Promise<ResponseTrend[]> {
+  const supabase = await createClient()
+
+  let query = supabase
+    .from("form_responses")
+    .select("created_at, source")
+    .eq("form_id", formId)
+    .order("created_at", { ascending: true })
+
+  if (startDate) {
+    query = query.gte("created_at", startDate.toISOString())
+  }
+
+  if (endDate) {
+    query = query.lte("created_at", endDate.toISOString())
+  }
+
+  if (source) {
+    query = query.eq("source", source)
+  }
+
+  const { data: responses, error } = await query
+
+  if (error || !responses || responses.length === 0) {
+    return []
+  }
+
+  // Group by date (using local timezone)
+  const dateMap = new Map<string, { qr: number; web: number }>()
+
+  responses.forEach((response) => {
+    const dateObj = new Date(response.created_at)
+    // Get local date string in YYYY-MM-DD format
+    const year = dateObj.getFullYear()
+    const month = String(dateObj.getMonth() + 1).padStart(2, "0")
+    const day = String(dateObj.getDate()).padStart(2, "0")
+    const date = `${year}-${month}-${day}`
+    
+    const current = dateMap.get(date) || { qr: 0, web: 0 }
+    
+    if (response.source === "qr") {
+      current.qr += 1
+    } else {
+      current.web += 1
+    }
+    
+    dateMap.set(date, current)
+  })
+
+  // Convert to array and sort by date
+  const trends: ResponseTrend[] = Array.from(dateMap.entries())
+    .map(([date, counts]) => ({
+      date,
+      qr: counts.qr,
+      web: counts.web,
+      total: counts.qr + counts.web,
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date))
+
+  return trends
+}

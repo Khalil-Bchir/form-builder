@@ -52,17 +52,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       title: "Forms",
       url: "/dashboard/forms",
       icon: FileText,
-      isActive: pathname?.startsWith("/dashboard/forms"),
-      items: [
-        {
-          title: "All Forms",
-          url: "/dashboard/forms",
-        },
-        {
-          title: "New Form",
-          url: "/dashboard/forms/new",
-        },
-      ],
+      isActive: pathname === "/dashboard/forms",
     },
   ]
 

@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Plus, FileText, MoreVertical, Eye, Settings, BarChart3, Trash2, Cog } from "lucide-react"
-import { toast } from "sonner"
+import { Plus, FileText, MoreVertical, Eye, BarChart3, Trash2, Cog, SquarePen } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -69,28 +68,6 @@ export function FormList() {
     setForms(forms.filter((f) => f.id !== formId))
   }
 
-  async function handleTogglePublish(formId: string, currentStatus: string) {
-    const newStatus = currentStatus === "published" ? "draft" : "published"
-    const { error } = await supabase
-      .from("forms")
-      .update({ status: newStatus })
-      .eq("id", formId)
-
-    if (error) {
-      toast.error("Failed to update form status")
-      console.error("Error updating form status:", error)
-      return
-    }
-
-    setForms(
-      forms.map((f) => (f.id === formId ? { ...f, status: newStatus as "draft" | "published" } : f))
-    )
-    toast.success(
-      newStatus === "published"
-        ? "Form published successfully!"
-        : "Form moved to draft"
-    )
-  }
 
   if (isLoading) {
     return (
@@ -155,71 +132,59 @@ export function FormList() {
                       {form.description || "No description"}
                     </CardDescription>
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreVertical className="size-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem asChild>
-                        <Link href={`/dashboard/forms/${form.id}/edit`}>
-                          <Settings className="size-4 mr-2" />
-                          Edit
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href={`/dashboard/forms/${form.id}/settings`}>
-                          <Cog className="size-4 mr-2" />
-                          Settings & Publish
-                        </Link>
-                      </DropdownMenuItem>
-                      {form.status === "published" && (
-                        <>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/f/${form.slug}`} target="_blank">
-                              <Eye className="size-4 mr-2" />
-                              View
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/dashboard/forms/${form.id}/analytics`}>
-                              <BarChart3 className="size-4 mr-2" />
-                              Analytics
-                            </Link>
-                          </DropdownMenuItem>
-                        </>
-                      )}
-                      <DropdownMenuItem
-                        onClick={() => handleDelete(form.id)}
-                        className="text-destructive"
-                      >
-                        <Trash2 className="size-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <div className="flex items-center gap-1">
+                    {form.status === "published" && (
+                      <>
+                        <Button asChild variant="ghost" size="sm">
+                          <Link href={`/f/${form.slug}`} target="_blank">
+                            <Eye className="size-4" />
+                          </Link>
+                        </Button>
+                        <Button asChild variant="ghost" size="sm">
+                          <Link href={`/dashboard/forms/${form.id}/analytics`}>
+                            <BarChart3 className="size-4" />
+                          </Link>
+                        </Button>
+                      </>
+                    )}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreVertical className="size-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                          <Link href={`/dashboard/forms/${form.id}/edit`}>
+                            <SquarePen className="size-4 mr-2" />
+                            Edit
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/dashboard/forms/${form.id}/settings`}>
+                            <Cog className="size-4 mr-2" />
+                            Settings
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleDelete(form.id)}
+                          className="text-destructive"
+                        >
+                          <Trash2 className="size-4 mr-2 text-destructive" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      variant={form.status === "published" ? "default" : "secondary"}
-                    >
-                      {form.status}
-                    </Badge>
-                    {form.status === "draft" && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleTogglePublish(form.id, form.status)}
-                        className="h-7 text-xs"
-                      >
-                        Publish
-                      </Button>
-                    )}
-                  </div>
+                  <Badge
+                    variant={form.status === "published" ? "default" : "secondary"}
+                  >
+                    {form.status}
+                  </Badge>
                   <span className="text-xs text-muted-foreground">
                     {format(new Date(form.created_at), "MMM d, yyyy")}
                   </span>

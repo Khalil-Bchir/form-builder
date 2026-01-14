@@ -1,13 +1,6 @@
 import { redirect } from "next/navigation"
 import { AppSidebar } from "@/components/app-sidebar"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
+import { DynamicBreadcrumbs } from "@/components/dynamic-breadcrumbs"
 import { Separator } from "@/components/ui/separator"
 import {
   SidebarInset,
@@ -35,26 +28,22 @@ export default async function PrivateLayout({
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2">
-          <div className="flex items-center gap-2 px-4">
+      <SidebarInset className="flex flex-col min-h-screen">
+        <header className="sticky top-0 z-50 flex h-16 shrink-0 items-center gap-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="flex items-center gap-2 px-4 w-full">
             <SidebarTrigger className="-ml-1" />
             <Separator
               orientation="vertical"
               className="mr-2 data-[orientation=vertical]:h-4"
             />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="/dashboard">
-                    Dashboard
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
+            <div className="flex-1 min-w-0">
+              <DynamicBreadcrumbs />
+            </div>
           </div>
         </header>
-        {children}
+        <main className="flex-1">
+          {children}
+        </main>
       </SidebarInset>
     </SidebarProvider>
   )

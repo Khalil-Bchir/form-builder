@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+import { createClient, createAnonymousClient } from "@/lib/supabase/server"
 import type { Form, FormQuestion, FormWithQuestions } from "../types/form"
 
 export async function getForms(userId: string) {
@@ -80,7 +80,8 @@ export async function getFormWithQuestionsBySlug(slug: string): Promise<{
   data: FormWithQuestions | null
   error: { message: string } | null
 }> {
-  const supabase = await createClient()
+  // Use anonymous client for public form access (no authentication required)
+  const supabase = createAnonymousClient()
   
   const { data: form, error: formError } = await supabase
     .from("forms")

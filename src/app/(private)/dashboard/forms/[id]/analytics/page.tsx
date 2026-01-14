@@ -6,6 +6,7 @@ import {
   getResponseStats,
   getQuestionAnalytics,
   getFormResponses,
+  getResponseTrends,
 } from "@/features/analytics/lib/analytics-queries"
 
 interface AnalyticsPageProps {
@@ -35,19 +36,23 @@ export default async function AnalyticsPage({ params }: AnalyticsPageProps) {
   }
 
   // Load initial analytics data
-  const [stats, questionAnalytics, responsesData] = await Promise.all([
+  const [stats, questionAnalytics, responsesData, trends] = await Promise.all([
     getResponseStats(id),
     getQuestionAnalytics(id),
     getFormResponses(id, undefined, undefined, undefined, 50, 0),
+    getResponseTrends(id),
   ])
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
+    <div className="flex flex-1 flex-col p-4 md:p-6 lg:p-8">
       <AnalyticsDashboard
         formId={id}
+        formTitle={form.title}
+        formDescription={form.description}
         initialStats={stats}
         initialQuestionAnalytics={questionAnalytics}
         initialResponses={responsesData.data}
+        initialTrends={trends}
       />
     </div>
   )
