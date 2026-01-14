@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { GalleryVerticalEnd } from "lucide-react"
 import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema"
 import * as z from "zod"
 import Link from "next/link"
 import { toast } from "sonner"
@@ -43,7 +43,7 @@ export function LoginForm({
   const supabase = createClient()
 
   const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
+    resolver: standardSchemaResolver(loginSchema),
     defaultValues: {
       email: "",
       password: "",

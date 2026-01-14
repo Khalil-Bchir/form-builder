@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema"
 import * as z from "zod"
 import Link from "next/link"
 import { toast } from "sonner"
@@ -41,7 +41,7 @@ export function ForgotPasswordForm({
   const supabase = createClient()
 
   const form = useForm<ForgotPasswordFormValues>({
-    resolver: zodResolver(forgotPasswordSchema),
+    resolver: standardSchemaResolver(forgotPasswordSchema),
     defaultValues: {
       email: "",
     },

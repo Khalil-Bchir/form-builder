@@ -204,15 +204,16 @@ export async function updateQuestion(
   }
 ) {
   const supabase = await createClient()
+  const { options, ...restData } = questionData
   const updateData: {
     order?: number
     type?: string
     text?: string
     required?: boolean
     options?: string | null
-  } = { ...questionData }
-  if (questionData.options) {
-    updateData.options = JSON.stringify(questionData.options)
+  } = { ...restData }
+  if (options) {
+    updateData.options = JSON.stringify(options)
   } else {
     updateData.options = null
   }

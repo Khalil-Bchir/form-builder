@@ -1,9 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema"
 import * as z from "zod"
 import Link from "next/link"
 import { toast } from "sonner"
@@ -45,11 +45,10 @@ export function ResetPasswordForm({
 }: React.ComponentProps<"div">) {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
-  const searchParams = useSearchParams()
   const supabase = createClient()
 
   const form = useForm<ResetPasswordFormValues>({
-    resolver: zodResolver(resetPasswordSchema),
+    resolver: standardSchemaResolver(resetPasswordSchema),
     defaultValues: {
       password: "",
       confirmPassword: "",
