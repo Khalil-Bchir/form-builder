@@ -95,20 +95,20 @@ export function FormBuilder({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">
+          <h1 className="text-xl sm:text-2xl font-bold">
             {formId ? "Edit Form" : "Create New Form"}
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm sm:text-base text-muted-foreground">
             Build your form by adding questions
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => router.push("/dashboard/forms")}>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Button variant="outline" onClick={() => router.push("/dashboard/forms")} className="w-full sm:w-auto">
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
+          <Button onClick={handleSave} disabled={isSaving} className="w-full sm:w-auto">
             <Save className="size-4 mr-2" />
             {isSaving ? "Saving..." : "Save Form"}
           </Button>
@@ -117,8 +117,8 @@ export function FormBuilder({
 
       <Separator />
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="space-y-4">
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="space-y-4 order-2 lg:order-1">
           <Card>
             <CardHeader>
               <CardTitle>Form Details</CardTitle>
@@ -160,10 +160,10 @@ export function FormBuilder({
                 </div>
               ) : (
                 questions.map((question, index) => (
-                  <div key={index} className="space-y-2">
-                    <div className="flex items-start justify-between gap-2 p-3 border rounded-lg">
-                      <div className="flex-1">
-                        <p className="font-medium">
+                    <div key={index} className="space-y-2">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 p-3 border rounded-lg">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium break-words">
                           {index + 1}. {question.text}
                           {question.required && (
                             <span className="text-destructive ml-1">*</span>
@@ -173,7 +173,7 @@ export function FormBuilder({
                           {question.type}
                         </p>
                       </div>
-                      <div className="flex gap-1">
+                      <div className="flex gap-1 flex-shrink-0">
                         <QuestionEditor
                           question={question}
                           onSave={(q) => handleUpdateQuestion(index, q)}
@@ -189,10 +189,10 @@ export function FormBuilder({
           </Card>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 order-1 lg:order-2">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
                 <Eye className="size-4" />
                 Preview
               </CardTitle>

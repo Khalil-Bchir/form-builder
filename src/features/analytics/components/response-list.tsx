@@ -16,8 +16,8 @@ export function ResponseList({ responses }: ResponseListProps) {
   return (
     <Card className="h-fit lg:sticky lg:top-6">
       <CardHeader>
-        <CardTitle className="text-lg">Recent Responses</CardTitle>
-        <CardDescription>
+        <CardTitle className="text-base sm:text-lg">Recent Responses</CardTitle>
+        <CardDescription className="text-xs sm:text-sm">
           Latest {responses.length} {responses.length === 1 ? "response" : "responses"}
         </CardDescription>
       </CardHeader>
@@ -30,14 +30,14 @@ export function ResponseList({ responses }: ResponseListProps) {
             </p>
           </div>
         ) : (
-          <ScrollArea className="h-[600px] lg:h-[calc(100vh-280px)]">
-            <div className="space-y-3 pr-4">
+          <ScrollArea className="h-[400px] sm:h-[500px] lg:h-[calc(100vh-280px)]">
+            <div className="space-y-3 pr-2 sm:pr-4">
               {responses.map((response) => (
                 <div
                   key={response.id}
-                  className="p-4 border rounded-lg space-y-3 hover:bg-muted/30 transition-colors"
+                  className="p-3 sm:p-4 border rounded-lg space-y-3 hover:bg-muted/30 transition-colors"
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div className="flex items-center gap-2">
                       {response.source === "qr" ? (
                         <QrCode className="size-4 text-muted-foreground" />
@@ -55,11 +55,11 @@ export function ResponseList({ responses }: ResponseListProps) {
                   <Separator />
                   <div className="space-y-2">
                     {response.answers.map((answer, index) => (
-                      <div key={index} className="text-sm">
-                        <span className="font-medium text-foreground">
+                      <div key={index} className="text-xs sm:text-sm">
+                        <span className="font-medium text-foreground break-words">
                           {answer.questionText}:
                         </span>{" "}
-                        <span className="text-muted-foreground">
+                        <span className="text-muted-foreground break-words">
                           {answer.answer.length > 100 
                             ? `${answer.answer.substring(0, 100)}...` 
                             : answer.answer}

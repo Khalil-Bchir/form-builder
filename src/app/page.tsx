@@ -25,7 +25,7 @@ export default function Home() {
           </Button>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           <div className="space-y-2 rounded-lg border p-6">
             <div className="flex size-12 items-center justify-center rounded-lg bg-primary/10">
               <FileText className="size-6 text-primary" />

@@ -299,18 +299,18 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Form Settings</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-xl sm:text-2xl font-bold">Form Settings</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
             Configure your form details and publishing options
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => router.back()}>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Button variant="outline" onClick={() => router.back()} className="w-full sm:w-auto">
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
+          <Button onClick={handleSave} disabled={isSaving} className="w-full sm:w-auto">
             <Save className="size-4 mr-2" />
             {isSaving ? "Saving..." : "Save Changes"}
           </Button>
@@ -382,7 +382,7 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="theme">Theme</Label>
                   <Select value={theme} onValueChange={(value) => setTheme(value as FormTheme)}>
@@ -433,7 +433,7 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
 
               <div className="space-y-2">
                 <Label htmlFor="color">Primary Color</Label>
-                <div className="grid grid-cols-4 gap-2 mb-2">
+                <div className="grid grid-cols-4 sm:grid-cols-4 gap-2 mb-2">
                   {THEME_PRESETS.map((preset) => (
                     <button
                       key={preset.value}
@@ -771,7 +771,7 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="contact_email" className="flex items-center gap-2">
                           <Mail className="size-4" />

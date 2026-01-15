@@ -191,7 +191,7 @@ export function PublicFormRenderer({
             <p className="font-semibold text-sm">{form.company_name}</p>
           </div>
         )}
-        <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground">
+                      <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs text-muted-foreground">
           {form.contact_email && (
             <a
               href={`mailto:${form.contact_email}`}
@@ -261,7 +261,7 @@ export function PublicFormRenderer({
               boxShadow: `0 20px 60px -12px ${form.color}20`
             }}
           >
-            <CardContent className="pt-12 pb-8 px-8">
+            <CardContent className="pt-8 sm:pt-12 pb-6 sm:pb-8 px-4 sm:px-8">
               <div className="flex flex-col items-center text-center space-y-6">
                 {/* Success icon with animation */}
                 <div className="relative">
@@ -295,11 +295,11 @@ export function PublicFormRenderer({
                 {/* Success message */}
                 <div className="space-y-3">
                   <h2 
-                    className="text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent"
+                    className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent"
                   >
                     Thank you!
                   </h2>
-                  <p className="text-muted-foreground text-lg leading-relaxed max-w-md mx-auto">
+                  <p className="text-muted-foreground text-base sm:text-lg leading-relaxed max-w-md mx-auto">
                     Your response has been submitted successfully. We appreciate your time!
                   </p>
                 </div>
@@ -392,7 +392,7 @@ export function PublicFormRenderer({
         fontFamily: FONT_FAMILIES[fontFamily] || FONT_FAMILIES.inter
       }}
     >
-      <div className={cn("mx-auto py-8", getLayoutClasses())}>
+      <div className={cn("mx-auto py-4 sm:py-8", getLayoutClasses())}>
         <Card 
           className={cn(
             "transition-all duration-300",
@@ -404,11 +404,11 @@ export function PublicFormRenderer({
             backgroundColor: layout === "full" ? "transparent" : undefined
           }}
         >
-          <CardHeader className="space-y-4">
+          <CardHeader className="space-y-4 px-4 sm:px-6">
             <div className="space-y-2">
-              <CardTitle className="text-3xl font-bold">{form.title}</CardTitle>
+              <CardTitle className="text-2xl sm:text-3xl font-bold">{form.title}</CardTitle>
               {form.description && (
-                <p className="text-muted-foreground text-base leading-relaxed">
+                <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
                   {form.description}
                 </p>
               )}
@@ -434,8 +434,8 @@ export function PublicFormRenderer({
               </div>
             )}
           </CardHeader>
-          <CardContent>
-            <form onSubmit={formHook.handleSubmit(onSubmit)} className="space-y-8">
+          <CardContent className="px-4 sm:px-6">
+            <form onSubmit={formHook.handleSubmit(onSubmit)} className="space-y-6 sm:space-y-8">
               {error && (
                 <Alert variant="destructive">
                   <AlertDescription>{error}</AlertDescription>
@@ -447,9 +447,9 @@ export function PublicFormRenderer({
                   key={question.id} 
                   className="space-y-3 transition-all duration-300"
                 >
-                    <Label className="text-base font-semibold flex items-center gap-2">
-                      <span className="text-lg">{getQuestionTypeEmoji(question.type)}</span>
-                      <span>
+                    <Label className="text-sm sm:text-base font-semibold flex items-center gap-2 flex-wrap">
+                      <span className="text-base sm:text-lg">{getQuestionTypeEmoji(question.type)}</span>
+                      <span className="break-words">
                         {question.text}
                         {question.required && (
                           <span className="text-destructive ml-1">*</span>

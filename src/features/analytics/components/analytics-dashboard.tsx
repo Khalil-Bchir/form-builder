@@ -134,17 +134,17 @@ export function AnalyticsDashboard({
       <div className="space-y-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight">{formTitle}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{formTitle}</h1>
             {formDescription && (
-              <p className="text-muted-foreground max-w-2xl">
+              <p className="text-sm sm:text-base text-muted-foreground max-w-2xl">
                 {formDescription}
               </p>
             )}
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               Analytics and insights for your form
             </p>
           </div>
-          <div className="flex flex-wrap gap-2 sm:flex-nowrap">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <Select
               value={dateRange}
               onValueChange={(v: "7d" | "30d" | "90d" | "all") => setDateRange(v)}
@@ -182,13 +182,13 @@ export function AnalyticsDashboard({
       {isLoading ? (
         <div className="space-y-6">
           {/* KPI Cards Skeleton */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             {[...Array(4)].map((_, i) => (
               <Skeleton key={i} className="h-32" />
             ))}
           </div>
           {/* Charts Skeleton */}
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
             <Skeleton className="h-64" />
             <Skeleton className="h-64" />
           </div>
@@ -199,7 +199,7 @@ export function AnalyticsDashboard({
         <>
           {/* KPI Cards Section */}
           {stats && (
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
@@ -288,7 +288,7 @@ export function AnalyticsDashboard({
           {/* Questions and Responses Section */}
           <div className="grid gap-6 lg:grid-cols-3">
             {/* Question Analytics - Takes 2 columns on desktop */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-6 order-2 lg:order-1">
               {questionAnalytics.length > 0 ? (
                 <QuestionAnalytics analytics={questionAnalytics} />
               ) : (
@@ -312,7 +312,7 @@ export function AnalyticsDashboard({
             </div>
 
             {/* Recent Responses - Takes 1 column on desktop */}
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-1 order-1 lg:order-2">
               <ResponseList responses={responses} />
             </div>
           </div>

@@ -102,7 +102,7 @@ export function QuestionEditor({
           <Button>Add Question</Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
         <DialogHeader>
           <DialogTitle>
             {mode === "edit" ? "Edit Question" : "Add Question"}

@@ -72,24 +72,24 @@ export function ResponseTrends({ trends, chartType }: ResponseTrendsProps) {
   return (
     <Card className="py-0">
       <CardHeader className="flex flex-col items-stretch border-b !p-0 sm:flex-row">
-        <div className="flex flex-1 flex-col justify-center gap-1 px-6 pt-4 pb-3 sm:!py-0">
-          <CardTitle className="text-base font-semibold">Response Trends</CardTitle>
-          <CardDescription>Submissions over time</CardDescription>
+        <div className="flex flex-1 flex-col justify-center gap-1 px-4 sm:px-6 pt-4 pb-3 sm:!py-0">
+          <CardTitle className="text-sm sm:text-base font-semibold">Response Trends</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">Submissions over time</CardDescription>
         </div>
-        <div className="flex">
+        <div className="flex flex-col sm:flex-row">
           {(["qr", "web", "total"] as const).map((key) => {
             const chart = key as keyof typeof chartConfig
             return (
               <button
                 key={chart}
                 data-active={activeChart === chart}
-                className="data-[active=true]:bg-muted/50 relative z-30 flex flex-1 flex-col justify-center gap-1 border-t px-6 py-4 text-left even:border-l sm:border-t-0 sm:border-l sm:px-8 sm:py-6 transition-colors hover:bg-muted/30"
+                className="data-[active=true]:bg-muted/50 relative z-30 flex flex-1 flex-col justify-center gap-1 border-t px-4 sm:px-6 py-3 sm:py-4 text-left even:border-l sm:border-t-0 sm:border-l sm:px-8 sm:py-6 transition-colors hover:bg-muted/30"
                 onClick={() => setActiveChart(chart)}
               >
                 <span className="text-muted-foreground text-xs">
                   {chartConfig[chart].label}
                 </span>
-                <span className="text-lg leading-none font-bold sm:text-3xl">
+                <span className="text-base sm:text-lg lg:text-3xl leading-none font-bold">
                   {total[key].toLocaleString()}
                 </span>
               </button>
@@ -100,7 +100,7 @@ export function ResponseTrends({ trends, chartType }: ResponseTrendsProps) {
       <CardContent className="px-2 sm:p-6">
         <ChartContainer
           config={chartConfig}
-          className="aspect-auto h-[250px] w-full"
+          className="aspect-auto h-[200px] sm:h-[250px] w-full"
         >
           <AreaChart
             accessibilityLayer

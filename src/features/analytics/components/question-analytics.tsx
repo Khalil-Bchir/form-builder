@@ -19,19 +19,19 @@ export function QuestionAnalytics({ analytics }: QuestionAnalyticsProps) {
   return (
     <div className="space-y-6">
       <div className="mb-4">
-        <h2 className="text-xl font-semibold">Question Analytics</h2>
-        <p className="text-sm text-muted-foreground mt-1">
+        <h2 className="text-lg sm:text-xl font-semibold">Question Analytics</h2>
+        <p className="text-xs sm:text-sm text-muted-foreground mt-1">
           Detailed insights for each question in your form
         </p>
       </div>
       {analytics.map((question) => (
         <Card key={question.questionId}>
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
+            <CardTitle className="text-sm sm:text-base flex items-center gap-2 flex-wrap">
               <span>{getQuestionTypeEmoji(question.questionType)}</span>
-              <span className="line-clamp-2">{question.questionText}</span>
+              <span className="line-clamp-2 break-words">{question.questionText}</span>
             </CardTitle>
-            <div className="text-sm text-muted-foreground mt-1">
+            <div className="text-xs sm:text-sm text-muted-foreground mt-1">
               {question.totalResponses} {question.totalResponses === 1 ? "response" : "responses"}
             </div>
           </CardHeader>
@@ -54,7 +54,7 @@ export function QuestionAnalytics({ analytics }: QuestionAnalyticsProps) {
                     }
 
                     return (
-                      <ChartContainer config={chartConfig} className="h-[280px] w-full">
+                      <ChartContainer config={chartConfig} className="h-[250px] sm:h-[280px] w-full">
                         <BarChart data={chartData}>
                           <CartesianGrid vertical={false} />
                           <XAxis
@@ -68,7 +68,7 @@ export function QuestionAnalytics({ analytics }: QuestionAnalyticsProps) {
                             angle={-45}
                             textAnchor="end"
                             height={80}
-                            className="text-xs"
+                            className="text-[10px] sm:text-xs"
                           />
                           <YAxis
                             tickLine={false}
@@ -115,14 +115,14 @@ export function QuestionAnalytics({ analytics }: QuestionAnalyticsProps) {
             ) : (
               <div>
                 {question.textResponses && question.textResponses.length > 0 ? (
-                  <ScrollArea className="h-[280px]">
-                    <div className="space-y-3 pr-4">
+                  <ScrollArea className="h-[250px] sm:h-[280px]">
+                    <div className="space-y-3 pr-2 sm:pr-4">
                       {question.textResponses.map((response, index) => (
                         <div
                           key={index}
                           className="p-3 border rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
                         >
-                          <p className="text-sm leading-relaxed">{response}</p>
+                          <p className="text-xs sm:text-sm leading-relaxed break-words">{response}</p>
                         </div>
                       ))}
                     </div>
