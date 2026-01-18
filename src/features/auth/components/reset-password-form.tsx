@@ -29,11 +29,11 @@ import { createClient } from "@/lib/supabase/client"
 
 const resetPasswordSchema = z
   .object({
-    password: z.string().min(6, "Password must be at least 6 characters"),
+    password: z.string().min(6, "Le mot de passe doit contenir au moins 6 caractères"),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
+    message: "Les mots de passe ne correspondent pas",
     path: ["confirmPassword"],
   })
 
@@ -67,10 +67,10 @@ export function ResetPasswordForm({
         return
       }
 
-      toast.success("Password updated successfully!")
+      toast.success("Mot de passe mis à jour avec succès !")
       router.push("/auth/login")
     } catch (error) {
-      toast.error("An unexpected error occurred")
+      toast.error("Une erreur inattendue s'est produite")
     } finally {
       setIsLoading(false)
     }
@@ -85,9 +85,9 @@ export function ResetPasswordForm({
               <div className="flex size-8 items-center justify-center rounded-md">
                 <KeyRound className="size-6" />
               </div>
-              <h1 className="text-xl font-bold">Reset Password</h1>
+              <h1 className="text-xl font-bold">Réinitialiser le mot de passe</h1>
               <FieldDescription>
-                Enter your new password below
+                Entrez votre nouveau mot de passe ci-dessous
               </FieldDescription>
             </div>
             <FormField
@@ -96,12 +96,12 @@ export function ResetPasswordForm({
               render={({ field }) => (
                 <FormItem>
                   <Field>
-                    <FieldLabel htmlFor="password">New Password</FieldLabel>
+                    <FieldLabel htmlFor="password">Nouveau mot de passe</FieldLabel>
                     <FormControl>
                       <Input
                         id="password"
                         type="password"
-                        placeholder="Enter new password"
+                        placeholder="Entrez le nouveau mot de passe"
                         {...field}
                         disabled={isLoading}
                       />
@@ -118,13 +118,13 @@ export function ResetPasswordForm({
                 <FormItem>
                   <Field>
                     <FieldLabel htmlFor="confirmPassword">
-                      Confirm Password
+                      Confirmer le mot de passe
                     </FieldLabel>
                     <FormControl>
                       <Input
                         id="confirmPassword"
                         type="password"
-                        placeholder="Confirm new password"
+                        placeholder="Confirmez le nouveau mot de passe"
                         {...field}
                         disabled={isLoading}
                       />
@@ -136,12 +136,12 @@ export function ResetPasswordForm({
             />
             <Field>
               <Button type="submit" disabled={isLoading} className="w-full">
-                {isLoading ? "Updating..." : "Update Password"}
+                {isLoading ? "Mise à jour..." : "Mettre à jour le mot de passe"}
               </Button>
             </Field>
             <FieldDescription className="text-center">
               <Link href="/auth/login" className="text-primary underline">
-                Back to sign in
+                Retour à la connexion
               </Link>
             </FieldDescription>
           </FieldGroup>

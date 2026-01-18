@@ -1,5 +1,5 @@
 import { createClient, createAnonymousClient } from "@/lib/supabase/server"
-import type { Form, FormQuestion, FormWithQuestions } from "../types/form"
+import type { FormWithQuestions, FormQuestionWithOptions } from "@/types/database.types"
 
 export async function getForms(userId: string) {
   const supabase = await createClient()
@@ -61,8 +61,18 @@ export async function getFormWithQuestions(formId: string): Promise<{
     return { data: null, error: questionsError }
   }
 
+  const { data: sections, error: sectionsError } = await supabase
+    .from("form_sections")
+    .select("*")
+    .eq("form_id", formId)
+    .order("order", { ascending: true })
+
+  if (sectionsError) {
+    return { data: null, error: sectionsError }
+  }
+
   // Parse JSON options for questions
-  const parsedQuestions = (questions || []).map((q) => ({
+  const parsedQuestions: FormQuestionWithOptions[] = (questions || []).map((q) => ({
     ...q,
     options: q.options ? (typeof q.options === 'string' ? JSON.parse(q.options) : q.options) : undefined,
   }))
@@ -71,6 +81,7 @@ export async function getFormWithQuestions(formId: string): Promise<{
     data: {
       ...form,
       questions: parsedQuestions,
+      sections: sections || [],
     },
     error: null,
   }
@@ -104,8 +115,18 @@ export async function getFormWithQuestionsBySlug(slug: string): Promise<{
     return { data: null, error: questionsError }
   }
 
+  const { data: sections, error: sectionsError } = await supabase
+    .from("form_sections")
+    .select("*")
+    .eq("form_id", form.id)
+    .order("order", { ascending: true })
+
+  if (sectionsError) {
+    return { data: null, error: sectionsError }
+  }
+
   // Parse JSON options for questions
-  const parsedQuestions = (questions || []).map((q) => ({
+  const parsedQuestions: FormQuestionWithOptions[] = (questions || []).map((q) => ({
     ...q,
     options: q.options ? (typeof q.options === 'string' ? JSON.parse(q.options) : q.options) : undefined,
   }))
@@ -114,6 +135,7 @@ export async function getFormWithQuestionsBySlug(slug: string): Promise<{
     data: {
       ...form,
       questions: parsedQuestions,
+      sections: sections || [],
     },
     error: null,
   }
@@ -176,8 +198,9 @@ export async function createQuestion(
     order: number
     type: string
     text: string
-    required: boolean
+    required: boolean | null
     options?: string[]
+    section_id?: string | null
   }
 ) {
   const supabase = await createClient()
@@ -200,8 +223,9 @@ export async function updateQuestion(
     order?: number
     type?: string
     text?: string
-    required?: boolean
+    required?: boolean | null
     options?: string[]
+    section_id?: string | null
   }
 ) {
   const supabase = await createClient()
@@ -210,8 +234,9 @@ export async function updateQuestion(
     order?: number
     type?: string
     text?: string
-    required?: boolean
+    required?: boolean | null
     options?: string | null
+    section_id?: string | null
   } = { ...restData }
   if (options) {
     updateData.options = JSON.stringify(options)
@@ -254,4 +279,75 @@ export async function getQuestions(formId: string) {
   }))
 
   return { data: parsedData, error }
+}
+
+// Section CRUD operations
+export async function createSection(
+  formId: string,
+  sectionData: {
+    title: string
+    description?: string | null
+    order: number
+  }
+) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("form_sections")
+    .insert({
+      form_id: formId,
+      ...sectionData,
+      description: sectionData.description ?? null,
+    })
+    .select()
+    .single()
+
+  return { data, error }
+}
+
+export async function updateSection(
+  sectionId: string,
+  sectionData: {
+    title?: string
+    description?: string | null
+    order?: number
+  }
+) {
+  const supabase = await createClient()
+  const updateData: {
+    title?: string
+    description?: string | null
+    order?: number
+  } = { ...sectionData }
+  if ('description' in sectionData) {
+    updateData.description = sectionData.description ?? null
+  }
+  const { data, error } = await supabase
+    .from("form_sections")
+    .update(updateData)
+    .eq("id", sectionId)
+    .select()
+    .single()
+
+  return { data, error }
+}
+
+export async function deleteSection(sectionId: string) {
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from("form_sections")
+    .delete()
+    .eq("id", sectionId)
+
+  return { error }
+}
+
+export async function getSections(formId: string) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("form_sections")
+    .select("*")
+    .eq("form_id", formId)
+    .order("order", { ascending: true })
+
+  return { data, error }
 }

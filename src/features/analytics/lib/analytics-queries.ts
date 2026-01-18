@@ -223,6 +223,7 @@ export async function getFormResponses(
   responses.forEach((response) => {
     responseMap.set(response.id, {
       id: response.id,
+      form_id: formId,
       created_at: response.created_at,
       source: response.source,
       answers: [],

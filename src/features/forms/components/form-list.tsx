@@ -20,7 +20,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { createClient } from "@/lib/supabase/client"
-import type { Form } from "../types/form"
+import type { Form } from "@/types/database.types"
 import { format } from "date-fns"
 
 export function FormList() {
@@ -56,7 +56,7 @@ export function FormList() {
   }
 
   async function handleDelete(formId: string) {
-    if (!confirm("Are you sure you want to delete this form?")) return
+    if (!confirm("Êtes-vous sûr de vouloir supprimer ce formulaire ?")) return
 
     const { error } = await supabase.from("forms").delete().eq("id", formId)
 
@@ -91,15 +91,15 @@ export function FormList() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold">My Forms</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">Mes formulaires</h1>
           <p className="text-sm sm:text-base text-muted-foreground">
-            Create and manage your forms
+            Créez et gérez vos formulaires
           </p>
         </div>
         <Button asChild className="w-full sm:w-auto">
           <Link href="/dashboard/forms/new">
             <Plus className="size-4 mr-2" />
-            New Form
+            Nouveau formulaire
           </Link>
         </Button>
       </div>
@@ -108,14 +108,14 @@ export function FormList() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <FileText className="size-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No forms yet</h3>
+            <h3 className="text-lg font-semibold mb-2">Aucun formulaire pour le moment</h3>
             <p className="text-muted-foreground mb-4">
-              Get started by creating your first form
+              Commencez en créant votre premier formulaire
             </p>
             <Button asChild>
               <Link href="/dashboard/forms/new">
                 <Plus className="size-4 mr-2" />
-                Create Form
+                Créer un formulaire
               </Link>
             </Button>
           </CardContent>
@@ -129,7 +129,7 @@ export function FormList() {
                   <div className="flex-1 min-w-0">
                     <CardTitle className="line-clamp-1">{form.title}</CardTitle>
                     <CardDescription className="mt-1 line-clamp-2">
-                      {form.description || "No description"}
+                      {form.description || "Aucune description"}
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
@@ -157,13 +157,13 @@ export function FormList() {
                         <DropdownMenuItem asChild>
                           <Link href={`/dashboard/forms/${form.id}/edit`}>
                             <SquarePen className="size-4 mr-2" />
-                            Edit
+                            Modifier
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
                           <Link href={`/dashboard/forms/${form.id}/settings`}>
                             <Cog className="size-4 mr-2" />
-                            Settings
+                            Paramètres
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem
@@ -171,7 +171,7 @@ export function FormList() {
                           className="text-destructive"
                         >
                           <Trash2 className="size-4 mr-2 text-destructive" />
-                          Delete
+                          Supprimer
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -183,7 +183,7 @@ export function FormList() {
                   <Badge
                     variant={form.status === "published" ? "default" : "secondary"}
                   >
-                    {form.status}
+                    {form.status === "published" ? "Publié" : "Brouillon"}
                   </Badge>
                   <span className="text-xs text-muted-foreground">
                     {format(new Date(form.created_at), "MMM d, yyyy")}

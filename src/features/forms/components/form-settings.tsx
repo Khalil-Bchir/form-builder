@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Save, Download, QrCode, Eye, Palette, Layout, Type, Sparkles, Building2, Mail, Phone, Globe, Image, Upload, X, Loader2 } from "lucide-react"
+import { Save, Download, QrCode, Eye, Palette, Layout, Type, Sparkles, Building2, Mail, Phone, Globe, Image, Upload, X, Loader2, Check } from "lucide-react"
+import Color from "color"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,10 +24,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import {
+  ColorPicker,
+  ColorPickerSelection,
+  ColorPickerHue,
+  ColorPickerAlpha,
+  ColorPickerEyeDropper,
+  ColorPickerOutput,
+  ColorPickerFormat,
+} from "@/components/ui/shadcn-io/color-picker"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { createClient } from "@/lib/supabase/client"
-import type { Form, FormTheme, FormLayout, FormFontFamily, ButtonStyle } from "../types/form"
+import type { Form, FormTheme, FormLayout, FormFontFamily, ButtonStyle } from "@/types/database.types"
 import { generateSlug } from "../lib/form-utils"
 
 interface FormSettingsProps {
@@ -53,13 +68,13 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
   const [description, setDescription] = useState(form.description || "")
   const [slug, setSlug] = useState(form.slug)
   const [status, setStatus] = useState(form.status)
-  const [color, setColor] = useState(form.color)
-  const [theme, setTheme] = useState<FormTheme>(form.theme || "light")
-  const [layout, setLayout] = useState<FormLayout>(form.layout || "centered")
-  const [fontFamily, setFontFamily] = useState<FormFontFamily>(form.font_family || "inter")
+  const [color, setColor] = useState(form.color || "#3b82f6")
+  const [theme, setTheme] = useState<FormTheme>((form.theme as FormTheme) || "light")
+  const [layout, setLayout] = useState<FormLayout>((form.layout as FormLayout) || "centered")
+  const [fontFamily, setFontFamily] = useState<FormFontFamily>((form.font_family as FormFontFamily) || "inter")
   const [backgroundColor, setBackgroundColor] = useState(form.background_color || "#ffffff")
-  const [buttonStyle, setButtonStyle] = useState<ButtonStyle>(form.button_style || "default")
-  const [buttonColor, setButtonColor] = useState(form.button_color || form.color)
+  const [buttonStyle, setButtonStyle] = useState<ButtonStyle>((form.button_style as ButtonStyle) || "default")
+  const [buttonColor, setButtonColor] = useState(form.button_color || form.color || "#3b82f6")
   const [showProgress, setShowProgress] = useState(form.show_progress !== false)
   const [companyName, setCompanyName] = useState(form.company_name || "")
   const [companyLogoUrl, setCompanyLogoUrl] = useState(form.company_logo_url || "")
@@ -78,13 +93,13 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
     setDescription(form.description || "")
     setSlug(form.slug)
     setStatus(form.status)
-    setColor(form.color)
-    setTheme(form.theme || "light")
-    setLayout(form.layout || "centered")
-    setFontFamily(form.font_family || "inter")
+    setColor(form.color || "#3b82f6")
+    setTheme((form.theme as FormTheme) || "light")
+    setLayout((form.layout as FormLayout) || "centered")
+    setFontFamily((form.font_family as FormFontFamily) || "inter")
     setBackgroundColor(form.background_color || "#ffffff")
-    setButtonStyle(form.button_style || "default")
-    setButtonColor(form.button_color || form.color)
+    setButtonStyle((form.button_style as ButtonStyle) || "default")
+    setButtonColor(form.button_color || form.color || "#3b82f6")
     setShowProgress(form.show_progress !== false)
     setCompanyName(form.company_name || "")
     setCompanyLogoUrl(form.company_logo_url || "")
@@ -103,7 +118,7 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
 
   const handleSave = async () => {
     if (!title.trim()) {
-      toast.error("Title is required")
+      toast.error("Le titre est requis")
       return
     }
 
@@ -135,12 +150,12 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
 
       if (error) throw error
 
-      toast.success("Settings saved successfully")
+      toast.success("Paramètres enregistrés avec succès")
       await onUpdate()
       router.refresh()
     } catch (error: unknown) {
       const errorMessage =
-        error instanceof Error ? error.message : "Failed to save settings"
+        error instanceof Error ? error.message : "Échec de l'enregistrement des paramètres"
       toast.error(errorMessage)
     } finally {
       setIsSaving(false)
@@ -159,14 +174,14 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
     // Validate file type
     const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp", "image/svg+xml"]
     if (!validTypes.includes(file.type)) {
-      toast.error("Please upload a valid image file (JPEG, PNG, GIF, WebP, or SVG)")
+      toast.error("Veuillez télécharger un fichier image valide (JPEG, PNG, GIF, WebP ou SVG)")
       return
     }
 
     // Validate file size (max 5MB)
     const maxSize = 5 * 1024 * 1024 // 5MB
     if (file.size > maxSize) {
-      toast.error("File size must be less than 5MB")
+      toast.error("La taille du fichier doit être inférieure à 5 Mo")
       return
     }
 
@@ -175,7 +190,7 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        toast.error("You must be logged in to upload files")
+        toast.error("Vous devez être connecté pour télécharger des fichiers")
         return
       }
 
@@ -218,10 +233,10 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
         .getPublicUrl(filePath)
 
       setCompanyLogoUrl(publicUrl)
-      toast.success("Logo uploaded successfully")
+      toast.success("Logo téléchargé avec succès")
     } catch (error: unknown) {
       const errorMessage =
-        error instanceof Error ? error.message : "Failed to upload logo"
+        error instanceof Error ? error.message : "Échec du téléchargement du logo"
       toast.error(errorMessage)
       console.error("Logo upload error:", error)
     } finally {
@@ -254,7 +269,7 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
     }
 
     setCompanyLogoUrl("")
-    toast.success("Logo removed")
+    toast.success("Logo supprimé")
   }
 
   const handleDownloadQR = async () => {
@@ -278,7 +293,7 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
             URL.revokeObjectURL(url)
           }, 500)
         }
-        toast.success("QR code opened for printing")
+        toast.success("Code QR ouvert pour l'impression")
       } else {
         // Fallback: download as HTML
         const a = document.createElement("a")
@@ -288,53 +303,53 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
         a.click()
         URL.revokeObjectURL(url)
         document.body.removeChild(a)
-        toast.success("QR code downloaded")
+        toast.success("Code QR téléchargé")
       }
     } catch (error) {
-      toast.error("Failed to generate QR code")
+      toast.error("Échec de la génération du code QR")
     } finally {
       setIsGeneratingQR(false)
     }
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold">Form Settings</h1>
+    <div className="space-y-4 sm:space-y-5 md:space-y-6 w-full min-w-0 max-w-full overflow-x-hidden">
+      <div className="flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-center sm:justify-between w-full min-w-0">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl sm:text-2xl font-bold break-words">Paramètres du formulaire</h1>
           <p className="text-sm sm:text-base text-muted-foreground">
-            Configure your form details and publishing options
+            Configurez les détails de votre formulaire et les options de publication
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:flex-shrink-0">
           <Button variant="outline" onClick={() => router.back()} className="w-full sm:w-auto">
-            Cancel
+            Annuler
           </Button>
           <Button onClick={handleSave} disabled={isSaving} className="w-full sm:w-auto">
             <Save className="size-4 mr-2" />
-            {isSaving ? "Saving..." : "Save Changes"}
+            {isSaving ? "Enregistrement..." : "Enregistrer les modifications"}
           </Button>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 sm:gap-5 md:gap-6 lg:grid-cols-2 w-full min-w-0 max-w-full">
         {/* Left Column */}
-        <div className="space-y-6">
-          <Card>
+        <div className="space-y-4 sm:space-y-5 md:space-y-6 min-w-0 max-w-full">
+          <Card className="min-w-0 max-w-full overflow-x-hidden">
             <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
+              <CardTitle>Informations de base</CardTitle>
               <CardDescription>
-                Update your form title, description, and URL
+                Mettez à jour le titre, la description et l'URL de votre formulaire
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="title">Form Title</Label>
+                <Label htmlFor="title">Titre du formulaire</Label>
                 <Input
                   id="title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Enter form title..."
+                  placeholder="Entrez le titre du formulaire..."
                 />
               </div>
               <div className="space-y-2">
@@ -343,77 +358,77 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Enter form description..."
+                  placeholder="Entrez la description du formulaire..."
                   rows={3}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="slug">URL Slug</Label>
+                <Label htmlFor="slug">Identifiant URL</Label>
                 <div className="flex gap-2">
                   <Input
                     id="slug"
                     value={slug}
                     onChange={(e) => setSlug(e.target.value)}
-                    placeholder="form-slug"
+                    placeholder="identifiant-formulaire"
                   />
                   <Button
                     type="button"
                     variant="outline"
                     onClick={handleGenerateSlug}
                   >
-                    Generate
+                    Générer
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Form URL: {formUrl}
+                  URL du formulaire : {formUrl}
                 </p>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="min-w-0 max-w-full overflow-x-hidden">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Palette className="size-4" />
-                Appearance
+                <Palette className="size-4 flex-shrink-0" />
+                Apparence
               </CardTitle>
               <CardDescription>
-                Customize the visual style of your form
+                Personnalisez le style visuel de votre formulaire
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="theme">Theme</Label>
+                  <Label htmlFor="theme">Thème</Label>
                   <Select value={theme} onValueChange={(value) => setTheme(value as FormTheme)}>
                     <SelectTrigger id="theme">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="light">Light</SelectItem>
-                      <SelectItem value="dark">Dark</SelectItem>
-                      <SelectItem value="auto">Auto (System)</SelectItem>
+                      <SelectItem value="light">Clair</SelectItem>
+                      <SelectItem value="dark">Sombre</SelectItem>
+                      <SelectItem value="auto">Auto (Système)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="layout">Layout</Label>
+                  <Label htmlFor="layout">Mise en page</Label>
                   <Select value={layout} onValueChange={(value) => setLayout(value as FormLayout)}>
                     <SelectTrigger id="layout">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="centered">Centered</SelectItem>
-                      <SelectItem value="wide">Wide</SelectItem>
-                      <SelectItem value="full">Full Width</SelectItem>
+                      <SelectItem value="centered">Centré</SelectItem>
+                      <SelectItem value="wide">Large</SelectItem>
+                      <SelectItem value="full">Pleine largeur</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="font_family">Font Family</Label>
+                <Label htmlFor="font_family">Police de caractères</Label>
                 <Select value={fontFamily} onValueChange={(value) => setFontFamily(value as FormFontFamily)}>
                   <SelectTrigger id="font_family">
                     <SelectValue />
@@ -432,8 +447,8 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
               <Separator />
 
               <div className="space-y-2">
-                <Label htmlFor="color">Primary Color</Label>
-                <div className="grid grid-cols-4 sm:grid-cols-4 gap-2 mb-2">
+                <Label htmlFor="color">Couleur principale</Label>
+                <div className="grid grid-cols-4 gap-2 mb-3">
                   {THEME_PRESETS.map((preset) => (
                     <button
                       key={preset.value}
@@ -444,46 +459,139 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
                           setButtonColor(preset.value)
                         }
                       }}
-                      className={`h-10 rounded-md border-2 transition-all ${
+                      className={`relative h-10 rounded-md border-2 transition-all hover:scale-105 ${
                         color === preset.value
-                          ? "border-foreground scale-105"
+                          ? "border-foreground ring-2 ring-foreground/20"
                           : "border-border hover:border-foreground/50"
                       }`}
                       style={{ backgroundColor: preset.value }}
                       title={preset.name}
-                    />
+                    >
+                      {color === preset.value && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Check className="size-4 text-white drop-shadow-md" strokeWidth={3} />
+                        </div>
+                      )}
+                    </button>
                   ))}
                 </div>
                 <div className="flex gap-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-10 w-20 p-0 border-2 hover:border-foreground/50 transition-all"
+                        style={{ 
+                          backgroundColor: color,
+                          borderColor: color === "#ffffff" || color === "#fff" ? "hsl(var(--border))" : color
+                        }}
+                      >
+                        <div className="h-full w-full rounded-sm" style={{ backgroundColor: color }} />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-4" align="start">
+                      <ColorPicker
+                        value={color || "#3b82f6"}
+                        onChange={((rgba: [number, number, number, number]) => {
+                          try {
+                            const hex = Color.rgb(rgba[0], rgba[1], rgba[2]).hex()
+                            setColor(hex)
+                            if (!buttonColor || buttonColor === form.color || !form.button_color) {
+                              setButtonColor(hex)
+                            }
+                          } catch (error) {
+                            console.error("Error converting color:", error)
+                          }
+                        }) as any}
+                        className="w-64"
+                      >
+                        <div className="space-y-3">
+                          <ColorPickerSelection className="h-40 w-full" />
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <ColorPickerHue className="flex-1" />
+                              <ColorPickerEyeDropper />
+                            </div>
+                            <ColorPickerAlpha />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <ColorPickerOutput />
+                            <ColorPickerFormat className="flex-1" />
+                          </div>
+                        </div>
+                      </ColorPicker>
+                    </PopoverContent>
+                  </Popover>
                   <Input
-                    id="color"
-                    type="color"
                     value={color}
-                    onChange={(e) => setColor(e.target.value)}
-                    className="w-20 h-10"
-                  />
-                  <Input
-                    value={color}
-                    onChange={(e) => setColor(e.target.value)}
+                    onChange={(e) => {
+                      setColor(e.target.value)
+                      if (!buttonColor || buttonColor === form.color) {
+                        setButtonColor(e.target.value)
+                      }
+                    }}
                     placeholder="#3b82f6"
+                    className="flex-1"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="background_color">Background Color</Label>
+                <Label htmlFor="background_color">Couleur de fond</Label>
                 <div className="flex gap-2">
-                  <Input
-                    id="background_color"
-                    type="color"
-                    value={backgroundColor}
-                    onChange={(e) => setBackgroundColor(e.target.value)}
-                    className="w-20 h-10"
-                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-10 w-20 p-0 border-2 hover:border-foreground/50 transition-all relative"
+                        style={{ 
+                          backgroundColor: backgroundColor,
+                          borderColor: backgroundColor === "#ffffff" || backgroundColor === "#fff" ? "hsl(var(--border))" : backgroundColor
+                        }}
+                      >
+                        <div className="h-full w-full rounded-sm" style={{ backgroundColor: backgroundColor }} />
+                        {(backgroundColor === "#ffffff" || backgroundColor === "#fff") && (
+                          <div className="absolute inset-0 border border-border rounded-sm" />
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-4" align="start">
+                      <ColorPicker
+                        value={backgroundColor || "#ffffff"}
+                        onChange={((rgba: [number, number, number, number]) => {
+                          try {
+                            const hex = Color.rgb(rgba[0], rgba[1], rgba[2]).hex()
+                            setBackgroundColor(hex)
+                          } catch (error) {
+                            console.error("Error converting color:", error)
+                          }
+                        }) as any}
+                        className="w-64"
+                      >
+                        <div className="space-y-3">
+                          <ColorPickerSelection className="h-40 w-full" />
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <ColorPickerHue className="flex-1" />
+                              <ColorPickerEyeDropper />
+                            </div>
+                            <ColorPickerAlpha />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <ColorPickerOutput />
+                            <ColorPickerFormat className="flex-1" />
+                          </div>
+                        </div>
+                      </ColorPicker>
+                    </PopoverContent>
+                  </Popover>
                   <Input
                     value={backgroundColor}
                     onChange={(e) => setBackgroundColor(e.target.value)}
                     placeholder="#ffffff"
+                    className="flex-1"
                   />
                 </div>
               </div>
@@ -492,25 +600,25 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
         </div>
 
         {/* Right Column */}
-        <div className="space-y-6">
-          <Card>
+        <div className="space-y-4 sm:space-y-5 md:space-y-6 min-w-0 max-w-full">
+          <Card className="min-w-0 max-w-full overflow-x-hidden">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Layout className="size-4" />
-                Publishing
+                <Layout className="size-4 flex-shrink-0" />
+                Publication
               </CardTitle>
               <CardDescription>
-                Control form visibility
+                Contrôler la visibilité du formulaire
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="status">Status</Label>
+                  <Label htmlFor="status">Statut</Label>
                   <p className="text-sm text-muted-foreground">
                     {status === "published"
-                      ? "Form is live and accessible"
-                      : "Form is in draft mode"}
+                      ? "Le formulaire est en ligne et accessible"
+                      : "Le formulaire est en mode brouillon"}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -533,20 +641,21 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
                 <>
                   <Separator />
                   <div className="space-y-2">
-                    <Label>Share Form</Label>
+                    <Label>Partager le formulaire</Label>
                     <div className="space-y-2">
-                      <div className="flex gap-2">
-                        <Input value={formUrl} readOnly className="text-xs" />
+                      <div className="flex gap-2 min-w-0">
+                        <Input value={formUrl} readOnly className="text-xs min-w-0 flex-1" />
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
                           onClick={() => {
                             navigator.clipboard.writeText(formUrl)
-                            toast.success("Link copied to clipboard")
+                            toast.success("Lien copié dans le presse-papiers")
                           }}
+                          className="flex-shrink-0"
                         >
-                          Copy
+                          Copier
                         </Button>
                       </div>
                       <Button
@@ -557,7 +666,7 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
                         disabled={isGeneratingQR}
                       >
                         <QrCode className="size-4 mr-2" />
-                        {isGeneratingQR ? "Generating..." : "Download QR Code"}
+                        {isGeneratingQR ? "Génération..." : "Télécharger le code QR"}
                       </Button>
                       <Button
                         type="button"
@@ -567,7 +676,7 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
                       >
                         <a href={formUrl} target="_blank" rel="noopener noreferrer">
                           <Eye className="size-4 mr-2" />
-                          Preview Form
+                          Aperçu du formulaire
                         </a>
                       </Button>
                     </div>
@@ -577,46 +686,84 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="min-w-0 max-w-full overflow-x-hidden">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Sparkles className="size-4" />
-                Button & Interaction
+                <Sparkles className="size-4 flex-shrink-0" />
+                Bouton et interaction
               </CardTitle>
               <CardDescription>
-                Customize button styles and form behavior
+                Personnalisez les styles de bouton et le comportement du formulaire
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="button_style">Button Style</Label>
+                <Label htmlFor="button_style">Style de bouton</Label>
                 <Select value={buttonStyle} onValueChange={(value) => setButtonStyle(value as ButtonStyle)}>
                   <SelectTrigger id="button_style">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="default">Default</SelectItem>
-                    <SelectItem value="rounded">Rounded</SelectItem>
-                    <SelectItem value="pill">Pill</SelectItem>
-                    <SelectItem value="outline">Outline</SelectItem>
+                    <SelectItem value="default">Par défaut</SelectItem>
+                    <SelectItem value="rounded">Arrondi</SelectItem>
+                    <SelectItem value="pill">Pilule</SelectItem>
+                    <SelectItem value="outline">Contour</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="button_color">Button Color</Label>
+                <Label htmlFor="button_color">Couleur du bouton</Label>
                 <div className="flex gap-2">
-                  <Input
-                    id="button_color"
-                    type="color"
-                    value={buttonColor}
-                    onChange={(e) => setButtonColor(e.target.value)}
-                    className="w-20 h-10"
-                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-10 w-20 p-0 border-2 hover:border-foreground/50 transition-all"
+                        style={{ 
+                          backgroundColor: buttonColor,
+                          borderColor: buttonColor === "#ffffff" || buttonColor === "#fff" ? "hsl(var(--border))" : buttonColor
+                        }}
+                      >
+                        <div className="h-full w-full rounded-sm" style={{ backgroundColor: buttonColor }} />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-4" align="start">
+                      <ColorPicker
+                        value={buttonColor || color || "#3b82f6"}
+                        onChange={((rgba: [number, number, number, number]) => {
+                          try {
+                            const hex = Color.rgb(rgba[0], rgba[1], rgba[2]).hex()
+                            setButtonColor(hex)
+                          } catch (error) {
+                            console.error("Error converting color:", error)
+                          }
+                        }) as any}
+                        className="w-64"
+                      >
+                        <div className="space-y-3">
+                          <ColorPickerSelection className="h-40 w-full" />
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <ColorPickerHue className="flex-1" />
+                              <ColorPickerEyeDropper />
+                            </div>
+                            <ColorPickerAlpha />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <ColorPickerOutput />
+                            <ColorPickerFormat className="flex-1" />
+                          </div>
+                        </div>
+                      </ColorPicker>
+                    </PopoverContent>
+                  </Popover>
                   <Input
                     value={buttonColor}
                     onChange={(e) => setButtonColor(e.target.value)}
                     placeholder={color}
+                    className="flex-1"
                   />
                 </div>
               </div>
@@ -625,9 +772,9 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="show_progress">Show Progress</Label>
+                  <Label htmlFor="show_progress">Afficher la progression</Label>
                   <p className="text-sm text-muted-foreground">
-                    Display progress indicator during submission
+                    Afficher l'indicateur de progression pendant la soumission
                   </p>
                 </div>
                 <Switch
@@ -639,22 +786,22 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="min-w-0 max-w-full overflow-x-hidden">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Building2 className="size-4" />
-                Branding & Contact
+                <Building2 className="size-4 flex-shrink-0" />
+                Image de marque et contact
               </CardTitle>
               <CardDescription>
-                Add your company branding and contact information
+                Ajoutez l'image de marque de votre entreprise et les informations de contact
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="show_branding">Show Branding</Label>
+                  <Label htmlFor="show_branding">Afficher l'image de marque</Label>
                   <p className="text-sm text-muted-foreground">
-                    Display branding information on the form
+                    Afficher les informations de marque sur le formulaire
                   </p>
                 </div>
                 <Switch
@@ -669,34 +816,34 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
                   <Separator />
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="company_name">Company Name</Label>
+                      <Label htmlFor="company_name">Nom de l'entreprise</Label>
                       <Input
                         id="company_name"
                         value={companyName}
                         onChange={(e) => setCompanyName(e.target.value)}
-                        placeholder="Your Company Name"
+                        placeholder="Nom de votre entreprise"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="company_logo">Company Logo</Label>
+                      <Label htmlFor="company_logo">Logo de l'entreprise</Label>
                       
                       {companyLogoUrl ? (
                         <div className="space-y-2">
-                          <div className="flex items-center gap-3 p-3 border rounded-lg">
-                            <div className="flex items-center justify-center w-20 h-20 border rounded-md overflow-hidden bg-muted flex-shrink-0">
+                          <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 border rounded-lg min-w-0">
+                            <div className="flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 border rounded-md overflow-hidden bg-muted flex-shrink-0">
                               <img
                                 src={companyLogoUrl}
-                                alt="Logo preview"
+                                alt="Aperçu du logo"
                                 className="max-w-full max-h-full object-contain"
                                 onError={(e) => {
                                   e.currentTarget.style.display = "none"
                                 }}
                               />
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate">
-                                Logo uploaded
+                            <div className="flex-1 min-w-0 overflow-hidden">
+                              <p className="text-xs sm:text-sm font-medium truncate">
+                                Logo téléchargé
                               </p>
                               <p className="text-xs text-muted-foreground truncate">
                                 {companyLogoUrl}
@@ -708,16 +855,17 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
                               size="sm"
                               onClick={handleRemoveLogo}
                               disabled={isUploadingLogo}
+                              className="flex-shrink-0"
                             >
                               <X className="size-4" />
                             </Button>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 min-w-0">
                             <Input
                               value={companyLogoUrl}
                               onChange={(e) => setCompanyLogoUrl(e.target.value)}
-                              placeholder="Or enter a URL manually"
-                              className="text-xs"
+                              placeholder="Ou entrez une URL manuellement"
+                              className="text-xs min-w-0 flex-1"
                             />
                           </div>
                         </div>
@@ -735,7 +883,7 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
                                   <Upload className="size-4 text-muted-foreground" />
                                 )}
                                 <span className="text-sm text-muted-foreground">
-                                  {isUploadingLogo ? "Uploading..." : "Upload Logo"}
+                                  {isUploadingLogo ? "Téléchargement..." : "Télécharger le logo"}
                                 </span>
                               </div>
                               <input
@@ -754,20 +902,20 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
                             </div>
                             <div className="relative flex justify-center text-xs uppercase">
                               <span className="bg-card px-2 text-muted-foreground">
-                                Or
+                                Ou
                               </span>
                             </div>
                           </div>
                           <Input
                             value={companyLogoUrl}
                             onChange={(e) => setCompanyLogoUrl(e.target.value)}
-                            placeholder="Enter logo URL manually"
+                            placeholder="Entrez l'URL du logo manuellement"
                             disabled={isUploadingLogo}
                           />
                         </div>
                       )}
                       <p className="text-xs text-muted-foreground">
-                        Upload an image file (max 5MB) or enter a URL. Supported formats: JPEG, PNG, GIF, WebP, SVG
+                        Téléchargez un fichier image (max 5 Mo) ou entrez une URL. Formats pris en charge : JPEG, PNG, GIF, WebP, SVG
                       </p>
                     </div>
 
@@ -775,28 +923,28 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
                       <div className="space-y-2">
                         <Label htmlFor="contact_email" className="flex items-center gap-2">
                           <Mail className="size-4" />
-                          Contact Email
+                          E-mail de contact
                         </Label>
                         <Input
                           id="contact_email"
                           type="email"
                           value={contactEmail}
                           onChange={(e) => setContactEmail(e.target.value)}
-                          placeholder="contact@company.com"
+                          placeholder="contact@entreprise.com"
                         />
                       </div>
 
                       <div className="space-y-2">
                         <Label htmlFor="contact_phone" className="flex items-center gap-2">
                           <Phone className="size-4" />
-                          Contact Phone
+                          Téléphone de contact
                         </Label>
                         <Input
                           id="contact_phone"
                           type="tel"
                           value={contactPhone}
                           onChange={(e) => setContactPhone(e.target.value)}
-                          placeholder="+1 (555) 123-4567"
+                          placeholder="+33 1 23 45 67 89"
                         />
                       </div>
                     </div>
@@ -804,14 +952,14 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
                     <div className="space-y-2">
                       <Label htmlFor="website_url" className="flex items-center gap-2">
                         <Globe className="size-4" />
-                        Website URL
+                        URL du site web
                       </Label>
                       <Input
                         id="website_url"
                         type="url"
                         value={websiteUrl}
                         onChange={(e) => setWebsiteUrl(e.target.value)}
-                        placeholder="https://www.company.com"
+                        placeholder="https://www.entreprise.com"
                       />
                     </div>
                   </div>

@@ -37,8 +37,10 @@ export default async function FormSettingsPage({ params }: FormSettingsPageProps
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
-      <FormSettings form={form} onUpdate={handleUpdate} />
+    <div className="flex flex-1 flex-col gap-3 sm:gap-4 p-4 sm:p-5 md:p-6 lg:p-8 overflow-x-hidden max-w-full min-w-0">
+      <div className="w-full min-w-0 max-w-full">
+        <FormSettings form={form} onUpdate={handleUpdate} />
+      </div>
     </div>
   )
 }

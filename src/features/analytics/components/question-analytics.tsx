@@ -17,25 +17,25 @@ interface QuestionAnalyticsProps {
 
 export function QuestionAnalytics({ analytics }: QuestionAnalyticsProps) {
   return (
-    <div className="space-y-6">
-      <div className="mb-4">
-        <h2 className="text-lg sm:text-xl font-semibold">Question Analytics</h2>
+    <div className="space-y-4 sm:space-y-6 w-full min-w-0 max-w-full overflow-x-hidden">
+      <div className="mb-3 sm:mb-4 w-full min-w-0">
+        <h2 className="text-base sm:text-lg lg:text-xl font-semibold">Analyses par question</h2>
         <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-          Detailed insights for each question in your form
+          Insights détaillés pour chaque question de votre formulaire
         </p>
       </div>
       {analytics.map((question) => (
-        <Card key={question.questionId}>
-          <CardHeader>
-            <CardTitle className="text-sm sm:text-base flex items-center gap-2 flex-wrap">
-              <span>{getQuestionTypeEmoji(question.questionType)}</span>
+        <Card key={question.questionId} className="min-w-0 max-w-full overflow-x-hidden">
+          <CardHeader className="px-3 sm:px-4 md:px-6">
+            <CardTitle className="text-xs sm:text-sm lg:text-base flex items-center gap-2 flex-wrap">
+              <span className="flex-shrink-0">{getQuestionTypeEmoji(question.questionType)}</span>
               <span className="line-clamp-2 break-words">{question.questionText}</span>
             </CardTitle>
-            <div className="text-xs sm:text-sm text-muted-foreground mt-1">
-              {question.totalResponses} {question.totalResponses === 1 ? "response" : "responses"}
+            <div className="text-xs text-muted-foreground mt-1">
+              {question.totalResponses} {question.totalResponses === 1 ? "réponse" : "réponses"}
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-3 sm:px-4 md:px-6">
             {question.questionType === "single_choice" ||
             question.questionType === "multiple_choice" ? (
               <div>
@@ -48,33 +48,34 @@ export function QuestionAnalytics({ analytics }: QuestionAnalyticsProps) {
 
                     const chartConfig = {
                       responses: {
-                        label: "Responses",
+                        label: "Réponses",
                         color: "var(--chart-4)",
                       },
                     }
 
                     return (
-                      <ChartContainer config={chartConfig} className="h-[250px] sm:h-[280px] w-full">
-                        <BarChart data={chartData}>
+                      <ChartContainer config={chartConfig} className="h-[200px] sm:h-[250px] lg:h-[280px] w-full min-w-0 max-w-full overflow-x-hidden">
+                        <BarChart data={chartData} margin={{ left: -10, right: 8, top: 8, bottom: 60 }}>
                           <CartesianGrid vertical={false} />
                           <XAxis
                             dataKey="answer"
                             tickLine={false}
-                            tickMargin={10}
+                            tickMargin={8}
                             axisLine={false}
                             tickFormatter={(value) => 
-                              value.length > 15 ? `${value.slice(0, 15)}...` : value
+                              value.length > 12 ? `${value.slice(0, 12)}...` : value
                             }
                             angle={-45}
                             textAnchor="end"
                             height={80}
-                            className="text-[10px] sm:text-xs"
+                            className="text-[9px] sm:text-[10px] lg:text-xs"
                           />
                           <YAxis
                             tickLine={false}
                             axisLine={false}
-                            tickMargin={8}
-                            className="text-xs"
+                            tickMargin={6}
+                            className="text-[10px] sm:text-xs"
+                            width={25}
                           />
                           <ChartTooltip
                             content={<ChartTooltipContent />}
@@ -84,7 +85,7 @@ export function QuestionAnalytics({ analytics }: QuestionAnalyticsProps) {
                             fill="var(--color-responses)"
                             radius={[4, 4, 0, 0]}
                             label={({ value, x, y, width, height }) => {
-                              if (value === 0) {
+                              if (value === 0 || (width || 0) < 20) {
                                 return <g />
                               }
                               return (
@@ -93,8 +94,8 @@ export function QuestionAnalytics({ analytics }: QuestionAnalyticsProps) {
                                   y={(y || 0) - 5}
                                   fill="currentColor"
                                   textAnchor="middle"
-                                  fontSize={12}
-                                  className="fill-foreground"
+                                  fontSize={10}
+                                  className="fill-foreground sm:text-xs"
                                 >
                                   {value}
                                 </text>
@@ -106,21 +107,21 @@ export function QuestionAnalytics({ analytics }: QuestionAnalyticsProps) {
                     )
                   })()
                 ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <p className="text-sm">No responses yet</p>
-                    <p className="text-xs mt-1">Answers will appear here once received</p>
+                  <div className="text-center py-8 sm:py-12 text-muted-foreground">
+                    <p className="text-xs sm:text-sm">Aucune réponse pour le moment</p>
+                    <p className="text-xs mt-1">Les réponses apparaîtront ici une fois reçues</p>
                   </div>
                 )}
               </div>
             ) : (
               <div>
                 {question.textResponses && question.textResponses.length > 0 ? (
-                  <ScrollArea className="h-[250px] sm:h-[280px]">
-                    <div className="space-y-3 pr-2 sm:pr-4">
+                  <ScrollArea className="h-[200px] sm:h-[250px] lg:h-[280px]">
+                    <div className="space-y-2 sm:space-y-3 pr-3 sm:pr-4 md:pr-6">
                       {question.textResponses.map((response, index) => (
                         <div
                           key={index}
-                          className="p-3 border rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                          className="p-2.5 sm:p-3 border rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
                         >
                           <p className="text-xs sm:text-sm leading-relaxed break-words">{response}</p>
                         </div>
@@ -128,9 +129,9 @@ export function QuestionAnalytics({ analytics }: QuestionAnalyticsProps) {
                     </div>
                   </ScrollArea>
                 ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <p className="text-sm">No responses yet</p>
-                    <p className="text-xs mt-1">Text responses will appear here once received</p>
+                  <div className="text-center py-8 sm:py-12 text-muted-foreground">
+                    <p className="text-xs sm:text-sm">Aucune réponse pour le moment</p>
+                    <p className="text-xs mt-1">Les réponses texte apparaîtront ici une fois reçues</p>
                   </div>
                 )}
               </div>

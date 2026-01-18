@@ -2,9 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
-import { CheckCircle2, Loader2, Mail, Phone, Globe, Building2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { CheckCircle2, Loader2, Mail, Phone, Globe, Building2, ChevronLeft, ChevronRight, Check } from "lucide-react"
 import {
   RadioGroup,
   RadioGroupItem,
@@ -13,8 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import type { FormWithQuestions } from "../types/form"
+import type { FormWithQuestions, FormSection } from "@/types/database.types"
 import { getQuestionTypeEmoji } from "../lib/form-utils"
 import { cn } from "@/lib/utils"
 
@@ -40,15 +37,61 @@ export function PublicFormRenderer({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [currentSectionIndex, setCurrentSectionIndex] = useState(0)
+
+  // Organize questions by section
+  const sections = form.sections || []
+  const questionsBySection = form.questions.reduce((acc, q) => {
+    const sectionId = q.section_id || "no-section"
+    if (!acc[sectionId]) {
+      acc[sectionId] = []
+    }
+    acc[sectionId].push(q)
+    return acc
+  }, {} as Record<string, typeof form.questions>)
+
+  const questionsWithoutSection = questionsBySection["no-section"] || []
+
+  // Create a list of all sections (including a virtual section for questions without section)
+  const allSections: Array<FormSection & { isVirtual?: boolean }> = [
+    ...sections,
+    ...(questionsWithoutSection.length > 0
+      ? [
+          {
+            id: "no-section",
+            title: "Questions générales",
+            description: "",
+            order: sections.length,
+            isVirtual: true,
+          } as FormSection & { isVirtual: boolean },
+        ]
+      : []),
+  ].sort((a, b) => a.order - b.order)
+
+  // Get current section
+  const currentSection = allSections[currentSectionIndex]
+  const currentSectionQuestions =
+    currentSection?.isVirtual
+      ? questionsWithoutSection
+      : questionsBySection[currentSection?.id || ""] || []
+
+  // Calculate section progress
+  const totalSections = allSections.length
+  const sectionProgress = totalSections > 0 ? ((currentSectionIndex + 1) / totalSections) * 100 : 0
 
   const theme = form.theme || "light"
   const layout = form.layout || "centered"
   const fontFamily = form.font_family || "inter"
   const backgroundColor = form.background_color || "#ffffff"
   const buttonStyle = form.button_style || "default"
-  const buttonColor = form.button_color || form.color
   const showProgress = form.show_progress !== false
   const showBranding = form.show_branding || false
+  
+  // Convert null to undefined for React style props
+  const formColor = form.color ?? undefined
+  const formBackgroundColor = form.background_color ?? undefined
+  const formButtonColor = form.button_color ?? undefined
+  const buttonColor = formButtonColor || formColor || undefined
 
   const formHook = useForm({
     defaultValues: form.questions.reduce((acc, q) => {
@@ -61,13 +104,52 @@ export function PublicFormRenderer({
     }, {} as Record<string, any>),
   })
 
-  // Calculate progress
+  // Calculate overall progress - watch all form values at once to avoid multiple subscriptions
+  const formValues = formHook.watch()
   const totalQuestions = form.questions.length
   const answeredQuestions = form.questions.filter((q) => {
-    const value = formHook.watch(q.id!)
+    const value = formValues[q.id!]
     return value && (Array.isArray(value) ? value.length > 0 : value !== "")
   }).length
   const progress = totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0
+
+  // Validate current section
+  const validateCurrentSection = (): boolean => {
+    const currentValues = formHook.getValues()
+    for (const question of currentSectionQuestions) {
+      if (question.required) {
+        const value = currentValues[question.id!]
+        if (!value || (Array.isArray(value) && value.length === 0)) {
+          setError(`Veuillez répondre à la question obligatoire : ${question.text}`)
+          return false
+        }
+      }
+    }
+    return true
+  }
+
+  // Navigate to next section
+  const handleNext = () => {
+    if (!validateCurrentSection()) {
+      return
+    }
+    setError(null)
+    if (currentSectionIndex < allSections.length - 1) {
+      setCurrentSectionIndex(currentSectionIndex + 1)
+      // Scroll to top
+      window.scrollTo({ top: 0, behavior: "smooth" })
+    }
+  }
+
+  // Navigate to previous section
+  const handlePrevious = () => {
+    setError(null)
+    if (currentSectionIndex > 0) {
+      setCurrentSectionIndex(currentSectionIndex - 1)
+      // Scroll to top
+      window.scrollTo({ top: 0, behavior: "smooth" })
+    }
+  }
 
   // Apply theme
   useEffect(() => {
@@ -103,7 +185,7 @@ export function PublicFormRenderer({
         if (question.required) {
           const value = data[question.id!]
           if (!value || (Array.isArray(value) && value.length === 0)) {
-            setError(`Please answer the required question: ${question.text}`)
+            setError(`Veuillez répondre à la question obligatoire : ${question.text}`)
             setIsSubmitting(false)
             return
           }
@@ -127,7 +209,7 @@ export function PublicFormRenderer({
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || "Failed to submit form")
+        throw new Error(errorData.error || "Échec de l'envoi du formulaire")
       }
 
       setIsSubmitted(true)
@@ -135,7 +217,7 @@ export function PublicFormRenderer({
       const errorMessage =
         err instanceof Error
           ? err.message
-          : "An error occurred. Please try again."
+          : "Une erreur s'est produite. Veuillez réessayer."
       setError(errorMessage)
     } finally {
       setIsSubmitting(false)
@@ -175,39 +257,41 @@ export function PublicFormRenderer({
     if (!showBranding) return null
 
     return (
-      <div className="space-y-3 text-center">
+      <div className="space-y-3 sm:space-y-4">
         {form.company_logo_url && (
           <div className="flex justify-center">
             <img
-              src={form.company_logo_url}
+              src={form.company_logo_url || "/placeholder.svg"}
               alt={form.company_name || "Company logo"}
-              className="max-h-16 max-w-full object-contain"
+              className="max-h-10 sm:max-h-12 max-w-full object-contain"
             />
           </div>
         )}
         {form.company_name && (
           <div className="flex items-center justify-center gap-2">
-            <Building2 className="size-4 text-muted-foreground" />
-            <p className="font-semibold text-sm">{form.company_name}</p>
+            <Building2 className="size-3 sm:size-4 text-muted-foreground" />
+            <p className="font-semibold text-xs sm:text-sm">{form.company_name}</p>
           </div>
         )}
-                      <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
           {form.contact_email && (
             <a
               href={`mailto:${form.contact_email}`}
-              className="flex items-center gap-1 hover:text-foreground transition-colors"
+              className="flex items-center gap-1.5 sm:gap-2 hover:text-foreground transition-colors"
             >
-              <Mail className="size-3" />
-              {form.contact_email}
+              <Mail className="size-3 sm:size-4" />
+              <span className="hidden sm:inline">{form.contact_email}</span>
+              <span className="sm:hidden">Email</span>
             </a>
           )}
           {form.contact_phone && (
             <a
               href={`tel:${form.contact_phone}`}
-              className="flex items-center gap-1 hover:text-foreground transition-colors"
+              className="flex items-center gap-1.5 sm:gap-2 hover:text-foreground transition-colors"
             >
-              <Phone className="size-3" />
-              {form.contact_phone}
+              <Phone className="size-3 sm:size-4" />
+              <span className="hidden sm:inline">{form.contact_phone}</span>
+              <span className="sm:hidden">Tél</span>
             </a>
           )}
           {form.website_url && (
@@ -215,10 +299,11 @@ export function PublicFormRenderer({
               href={form.website_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 hover:text-foreground transition-colors"
+              className="flex items-center gap-1.5 sm:gap-2 hover:text-foreground transition-colors"
             >
-              <Globe className="size-3" />
-              Website
+              <Globe className="size-3 sm:size-4" />
+              <span className="hidden sm:inline">Site web</span>
+              <span className="sm:hidden">Web</span>
             </a>
           )}
         </div>
@@ -229,67 +314,34 @@ export function PublicFormRenderer({
   if (isSubmitted) {
     return (
       <div
-        className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
+        className="min-h-screen flex items-center justify-center p-4"
         style={{
-          fontFamily: FONT_FAMILIES[fontFamily] || FONT_FAMILIES.inter
+          fontFamily: FONT_FAMILIES[fontFamily] || FONT_FAMILIES.inter,
+          backgroundColor: backgroundColor || "#ffffff"
         }}
       >
-        {/* Animated gradient background */}
-        <div 
-          className="absolute inset-0 -z-10"
-          style={{
-            background: `linear-gradient(135deg, ${form.color}08 0%, ${form.color}03 50%, ${backgroundColor || '#ffffff'} 100%)`,
-          }}
-        >
-          {/* Animated circles for depth */}
-          <div 
-            className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-3xl opacity-20 animate-pulse"
-            style={{ backgroundColor: form.color }}
-          />
-          <div 
-            className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full blur-3xl opacity-20 animate-pulse delay-1000"
-            style={{ backgroundColor: form.color }}
-          />
-        </div>
-
         {/* Main content */}
-        <div className="w-full max-w-lg relative z-10">
-          <Card
-            className="backdrop-blur-sm bg-card/80 border-2 shadow-2xl"
+        <div className="w-full max-w-lg">
+          <div
+            className="border border-border rounded p-8 sm:p-12"
             style={{ 
-              borderColor: `${form.color}30`,
-              boxShadow: `0 20px 60px -12px ${form.color}20`
+              backgroundColor: backgroundColor || "#ffffff"
             }}
           >
-            <CardContent className="pt-8 sm:pt-12 pb-6 sm:pb-8 px-4 sm:px-8">
               <div className="flex flex-col items-center text-center space-y-6">
-                {/* Success icon with animation */}
-                <div className="relative">
+                {/* Success icon */}
+                <div className="flex justify-center mb-6">
                   <div
-                    className="flex size-24 items-center justify-center rounded-full transition-all duration-500 scale-100"
+                    className="flex size-16 items-center justify-center rounded-full"
                     style={{ 
-                      backgroundColor: `${form.color}15`,
-                      boxShadow: `0 0 0 0 ${form.color}40`
+                      backgroundColor: formColor ? `${formColor}15` : undefined
                     }}
                   >
-                    <div
-                      className="absolute inset-0 rounded-full animate-ping opacity-20"
-                      style={{ backgroundColor: form.color }}
-                    />
                     <CheckCircle2
-                      className="size-12 relative z-10"
-                      style={{ color: form.color }}
+                      className="size-8"
+                      style={{ color: formColor || "var(--color-primary)" }}
                     />
                   </div>
-                  {/* Ripple effect */}
-                  <div
-                    className="absolute inset-0 rounded-full animate-ping"
-                    style={{ 
-                      backgroundColor: form.color,
-                      animationDelay: '0.5s',
-                      opacity: 0.1
-                    }}
-                  />
                 </div>
 
                 {/* Success message */}
@@ -297,32 +349,30 @@ export function PublicFormRenderer({
                   <h2 
                     className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent"
                   >
-                    Thank you!
+                    Merci !
                   </h2>
                   <p className="text-muted-foreground text-base sm:text-lg leading-relaxed max-w-md mx-auto">
-                    Your response has been submitted successfully. We appreciate your time!
+                    Votre réponse a été soumise avec succès. Nous apprécions votre temps !
                   </p>
                 </div>
 
                 {/* Decorative line */}
                 <div 
-                  className="w-24 h-1 rounded-full"
-                  style={{ backgroundColor: form.color }}
+                  className="w-24 h-0.5 mx-auto"
+                  style={{ backgroundColor: formColor || "var(--color-primary)" }}
                 />
 
                 {/* Branding section */}
                 {showBranding && (form.company_name || form.company_logo_url || form.contact_email || form.contact_phone || form.website_url) && (
-                  <div className="pt-6 mt-6 border-t w-full border-border/50">
+                  <div className="pt-6 mt-6 border-t w-full border-border">
                     <div className="space-y-4">
                       {form.company_logo_url && (
                         <div className="flex justify-center">
-                          <div className="p-3 bg-muted/50 rounded-lg">
-                            <img
-                              src={form.company_logo_url}
-                              alt={form.company_name || "Company logo"}
-                              className="max-h-12 max-w-full object-contain"
-                            />
-                          </div>
+                          <img
+                            src={form.company_logo_url || "/placeholder.svg"}
+                            alt={form.company_name || "Company logo"}
+                            className="max-h-12 max-w-full object-contain"
+                          />
                         </div>
                       )}
                       {form.company_name && (
@@ -336,10 +386,10 @@ export function PublicFormRenderer({
                           {form.contact_email && (
                             <a
                               href={`mailto:${form.contact_email}`}
-                              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/50 hover:bg-muted transition-all hover:scale-105"
+                              className="flex items-center gap-2 px-4 py-2 border border-border rounded hover:bg-muted/50"
                             >
                               <Mail className="size-4" />
-                              <span className="text-muted-foreground hover:text-foreground transition-colors">
+                              <span className="text-muted-foreground">
                                 {form.contact_email}
                               </span>
                             </a>
@@ -347,10 +397,10 @@ export function PublicFormRenderer({
                           {form.contact_phone && (
                             <a
                               href={`tel:${form.contact_phone}`}
-                              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/50 hover:bg-muted transition-all hover:scale-105"
+                              className="flex items-center gap-2 px-4 py-2 border border-border rounded hover:bg-muted/50"
                             >
                               <Phone className="size-4" />
-                              <span className="text-muted-foreground hover:text-foreground transition-colors">
+                              <span className="text-muted-foreground">
                                 {form.contact_phone}
                               </span>
                             </a>
@@ -360,11 +410,11 @@ export function PublicFormRenderer({
                               href={form.website_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/50 hover:bg-muted transition-all hover:scale-105"
+                              className="flex items-center gap-2 px-4 py-2 border border-border rounded hover:bg-muted/50"
                             >
                               <Globe className="size-4" />
-                              <span className="text-muted-foreground hover:text-foreground transition-colors">
-                                Visit Website
+                              <span className="text-muted-foreground">
+                                Visiter le site web
                               </span>
                             </a>
                           )}
@@ -374,8 +424,7 @@ export function PublicFormRenderer({
                   </div>
                 )}
               </div>
-            </CardContent>
-          </Card>
+          </div>
         </div>
       </div>
     )
@@ -383,214 +432,363 @@ export function PublicFormRenderer({
 
   return (
     <div 
-      className={cn(
-        "min-h-screen p-4 transition-all duration-300",
-        layout === "full" ? "" : "bg-gradient-to-br from-background to-muted/20"
-      )}
+      className="min-h-screen"
       style={{ 
-        backgroundColor: layout === "full" ? backgroundColor : undefined,
+        backgroundColor: backgroundColor || "#ffffff",
         fontFamily: FONT_FAMILIES[fontFamily] || FONT_FAMILIES.inter
       }}
     >
-      <div className={cn("mx-auto py-4 sm:py-8", getLayoutClasses())}>
-        <Card 
-          className={cn(
-            "transition-all duration-300",
-            layout === "full" && "border-0 shadow-none"
-          )}
-          style={{ 
-            borderTopColor: form.color, 
-            borderTopWidth: 4,
-            backgroundColor: layout === "full" ? "transparent" : undefined
-          }}
-        >
-          <CardHeader className="space-y-4 px-4 sm:px-6">
-            <div className="space-y-2">
-              <CardTitle className="text-2xl sm:text-3xl font-bold">{form.title}</CardTitle>
-              {form.description && (
-                <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
-                  {form.description}
-                </p>
-              )}
+      <div className="flex max-w-7xl mx-auto">
+        {/* Step Counter - Left Side */}
+        {totalSections > 1 && (
+          <div className="hidden lg:flex w-1/5 flex-shrink-0 pl-4 xl:pl-8 pr-4 xl:pr-6 sticky top-0 h-screen items-center justify-center">
+            <div className="flex flex-col items-center">
+              {allSections.map((section, index) => {
+                const isCurrent = index === currentSectionIndex
+                const isCompleted = index < currentSectionIndex
+                const isFuture = index > currentSectionIndex
+                const stepColor = formColor
+                
+                return (
+                  <div key={section.id || index} className="relative flex flex-col items-center">
+                    {/* Step circle */}
+                    <div 
+                      className={cn(
+                        "w-10 h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center text-xs lg:text-sm font-semibold transition-all duration-300 relative z-10",
+                        isCompleted && "bg-primary text-primary-foreground shadow-md",
+                        isCurrent && "bg-primary text-primary-foreground shadow-lg ring-2 lg:ring-4 ring-primary/25",
+                        isFuture && "border-2 border-border bg-background text-muted-foreground"
+                      )}
+                      style={stepColor ? {
+                        ...(isCompleted || isCurrent ? {
+                          backgroundColor: stepColor,
+                          color: "var(--color-primary-foreground)",
+                          ...(isCurrent && {
+                            boxShadow: `0 0 0 4px ${stepColor}40, var(--shadow-lg)`
+                          })
+                        } : {})
+                      } : {}}
+                    >
+                      {isCompleted ? (
+                        <Check className="w-4 h-4 lg:w-5 lg:h-5" />
+                      ) : (
+                        index + 1
+                      )}
+                    </div>
+                    
+                    {/* Connecting line */}
+                    {index < allSections.length - 1 && (
+                      <div className="relative w-0.5 -mt-5 lg:-mt-6 mb-0 h-16 lg:h-20">
+                        {/* Background line */}
+                        <div className="absolute inset-0 bg-border" />
+                        {/* Progress line */}
+                        {isCompleted && (
+                          <div 
+                            className={cn(
+                              "absolute inset-0 transition-all duration-500",
+                              stepColor ? "" : "bg-primary"
+                            )}
+                            style={stepColor ? { 
+                              backgroundColor: stepColor,
+                              height: "100%"
+                            } : { height: "100%" }}
+                          />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
-            {showProgress && totalQuestions > 0 && (
-              <div className="space-y-2 pt-2">
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <span>Progress</span>
-                  <span>{answeredQuestions} of {totalQuestions} answered</span>
+          </div>
+        )}
+        
+        {/* Vertical Separator */}
+        {totalSections > 1 && (
+          <div className="hidden lg:flex items-center justify-center sticky top-0 h-screen">
+            <div className="w-px flex-shrink-0 h-[80%] bg-border" />
+          </div>
+        )}
+        
+        {/* Main Content - Right Side */}
+        <div className="flex-1 flex flex-col min-w-0 w-full lg:w-auto">
+          <div className="flex-1 p-4 sm:p-6 md:p-8">
+            <div className="max-w-3xl mx-auto w-full">
+              {/* Mobile Step Indicator */}
+              {totalSections > 1 && (
+                <div className="lg:hidden mb-6 pb-4 border-b border-border">
+                  <div className="relative flex items-center justify-between mb-3">
+                    {/* Background line */}
+                    <div className="absolute top-4 sm:top-5 left-0 right-0 h-0.5 bg-border" />
+                    {/* Progress line */}
+                    {currentSectionIndex > 0 && (
+                      <div 
+                        className="absolute top-4 sm:top-5 left-0 h-0.5 transition-all duration-500"
+                        style={{ 
+                          width: `${(currentSectionIndex / (totalSections - 1)) * 100}%`,
+                          backgroundColor: formColor || "var(--color-primary)"
+                        }}
+                      />
+                    )}
+                    {allSections.map((section, index) => {
+                      const isCurrent = index === currentSectionIndex
+                      const isCompleted = index < currentSectionIndex
+                      const stepColor = formColor
+                      
+                      return (
+                        <div key={section.id || index} className="relative z-10">
+                          <div 
+                            className={cn(
+                              "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold transition-all duration-300",
+                              isCompleted && "bg-primary text-primary-foreground",
+                              isCurrent && "bg-primary text-primary-foreground ring-2 ring-primary/25",
+                              !isCompleted && !isCurrent && "border-2 border-border bg-background text-muted-foreground"
+                            )}
+                            style={stepColor && (isCompleted || isCurrent) ? {
+                              backgroundColor: stepColor,
+                              color: "var(--color-primary-foreground)"
+                            } : {}}
+                          >
+                            {isCompleted ? (
+                              <Check className="w-4 h-4 sm:w-5 sm:h-5" />
+                            ) : (
+                              index + 1
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <p className="text-xs sm:text-sm text-muted-foreground text-center">
+                    Étape {currentSectionIndex + 1} sur {totalSections}
+                  </p>
                 </div>
-                <div 
-                  className="relative h-2 w-full overflow-hidden rounded-full"
-                  style={{ backgroundColor: `${form.color}15` }}
-                >
-                  <div
-                    className="h-full transition-all duration-300 ease-out"
-                    style={{ 
-                      width: `${progress}%`,
-                      backgroundColor: form.color
-                    }}
-                  />
-                </div>
+              )}
+              
+              {/* Form Header */}
+              <div className="mb-6 sm:mb-8 pb-4 sm:pb-6 border-b border-border">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold mb-2">{form.title}</h1>
+                {form.description && (
+                  <p className="text-muted-foreground text-sm sm:text-base">
+                    {form.description}
+                  </p>
+                )}
               </div>
-            )}
-          </CardHeader>
-          <CardContent className="px-4 sm:px-6">
-            <form onSubmit={formHook.handleSubmit(onSubmit)} className="space-y-6 sm:space-y-8">
+            
+            <form id="form-submit" onSubmit={formHook.handleSubmit(onSubmit)} className="space-y-6 sm:space-y-8">
               {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
+                <div className="p-3 sm:p-4 mb-4 sm:mb-6 border border-destructive/50 bg-destructive/10 rounded text-sm">
+                  <p className="text-sm text-destructive">{error}</p>
+                </div>
               )}
 
-              {form.questions.map((question, index) => (
+              {/* Section header */}
+              {currentSection && (
+                <div className="space-y-2 pb-4 sm:pb-6 border-b border-border">
+                  <h2 className="text-xl sm:text-2xl font-semibold">{currentSection.title}</h2>
+                  {currentSection.description && (
+                    <p className="text-muted-foreground text-sm sm:text-base">
+                      {currentSection.description}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Current section questions */}
+              {currentSectionQuestions.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>Aucune question dans cette section</p>
+                </div>
+              ) : (
+                currentSectionQuestions.map((question, index) => (
                 <div 
                   key={question.id} 
-                  className="space-y-3 transition-all duration-300"
+                  className="space-y-3 py-4 sm:py-6 border-b border-border last:border-b-0"
                 >
-                    <Label className="text-sm sm:text-base font-semibold flex items-center gap-2 flex-wrap">
-                      <span className="text-base sm:text-lg">{getQuestionTypeEmoji(question.type)}</span>
-                      <span className="break-words">
-                        {question.text}
-                        {question.required && (
-                          <span className="text-destructive ml-1">*</span>
-                        )}
-                      </span>
-                    </Label>
+                    <Label className="text-base sm:text-lg md:text-xl font-semibold flex items-center gap-2 sm:gap-2.5 flex-wrap text-foreground">
+                    <span className="text-base sm:text-lg md:text-xl">{getQuestionTypeEmoji(question.type)}</span>
+                    <span className="break-words">
+                      {question.text}
+                      {question.required && (
+                        <span className="text-destructive ml-1">*</span>
+                      )}
+                    </span>
+                  </Label>
 
-                    {question.type === "single_choice" && (
-                      <RadioGroup
-                        value={formHook.watch(question.id!)}
-                        onValueChange={(value) => {
-                          formHook.setValue(question.id!, value)
-                        }}
-                        className="space-y-3"
-                      >
-                        {question.options?.map((option, idx) => (
+                  {question.type === "single_choice" && (
+                    <RadioGroup
+                      value={formValues[question.id!] || ""}
+                      onValueChange={(value) => {
+                        formHook.setValue(question.id!, value, { shouldValidate: false })
+                      }}
+                      className="space-y-2.5"
+                    >
+                      {question.options?.map((option, idx) => {
+                        const currentValue = formValues[question.id!]
+                        const isSelected = currentValue === option
+                        return (
                           <div 
                             key={idx} 
                             className={cn(
-                              "flex items-center space-x-3 p-3 rounded-lg border transition-all duration-200 hover:bg-accent/50",
-                              formHook.watch(question.id!) === option && "border-primary bg-primary/5"
+                              "flex items-center space-x-2 sm:space-x-3 px-2 sm:px-3 py-2 sm:py-2.5 rounded-md transition-all duration-200 cursor-pointer group",
+                              isSelected 
+                                ? "bg-primary/10" 
+                                : "hover:bg-muted/50"
                             )}
-                            style={{
-                              borderColor: formHook.watch(question.id!) === option ? form.color : undefined
-                            }}
                           >
                             <RadioGroupItem 
                               value={option} 
                               id={`${question.id}-${idx}`}
                               style={{ 
-                                borderColor: formHook.watch(question.id!) === option ? form.color : undefined
+                                borderColor: isSelected ? formColor : undefined,
+                                color: isSelected ? formColor : undefined
                               }}
+                              className="transition-all duration-200 flex-shrink-0"
                             />
                             <Label
                               htmlFor={`${question.id}-${idx}`}
-                              className="font-normal cursor-pointer flex-1"
+                              className="font-normal cursor-pointer flex-1 text-sm sm:text-base"
                             >
                               {option}
                             </Label>
                           </div>
-                        ))}
-                      </RadioGroup>
-                    )}
-
-                    {question.type === "multiple_choice" && (
-                      <div className="space-y-3">
-                        {question.options?.map((option, idx) => {
-                          const isChecked = formHook
-                            .watch(question.id!)
-                            .includes(option)
-                          
-                          return (
-                            <div 
-                              key={idx} 
-                              className={cn(
-                                "flex items-center space-x-3 p-3 rounded-lg border transition-all duration-200 hover:bg-accent/50",
-                                isChecked && "border-primary bg-primary/5"
-                              )}
-                              style={{
-                                borderColor: isChecked ? form.color : undefined
-                              }}
-                            >
-                              <Checkbox
-                                id={`${question.id}-${idx}`}
-                                checked={isChecked}
-                                onCheckedChange={(checked) => {
-                                  const current = formHook.watch(question.id!) || []
-                                  if (checked) {
-                                    formHook.setValue(question.id!, [...current, option])
-                                  } else {
-                                    formHook.setValue(
-                                      question.id!,
-                                      current.filter((v: string) => v !== option)
-                                    )
-                                  }
-                                }}
-                                style={{ 
-                                  borderColor: isChecked ? form.color : undefined
-                                }}
-                              />
-                              <Label
-                                htmlFor={`${question.id}-${idx}`}
-                                className="font-normal cursor-pointer flex-1"
-                              >
-                                {option}
-                              </Label>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-
-                    {question.type === "short_text" && (
-                      <Input
-                        {...formHook.register(question.id!)}
-                        placeholder="Enter your answer..."
-                        className="h-11 text-base"
-                      />
-                    )}
-
-                    {question.type === "long_text" && (
-                      <Textarea
-                        {...formHook.register(question.id!)}
-                        placeholder="Enter your answer..."
-                        rows={5}
-                        className="text-base resize-none"
-                      />
-                    )}
-                  </div>
-                ))}
-
-              <div className="pt-6">
-                <Button
-                  type="submit"
-                  className={getButtonClasses()}
-                  disabled={isSubmitting}
-                  size="lg"
-                  style={{
-                    backgroundColor: buttonStyle !== "outline" ? buttonColor : undefined,
-                    color: buttonStyle !== "outline" ? "#ffffff" : buttonColor,
-                    borderColor: buttonColor,
-                  }}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="size-4 mr-2 animate-spin" />
-                      {showProgress ? "Submitting..." : "Please wait..."}
-                    </>
-                  ) : (
-                    "Submit"
+                        )
+                      })}
+                    </RadioGroup>
                   )}
-                </Button>
-              </div>
+
+                  {question.type === "multiple_choice" && (
+                    <div className="space-y-2.5">
+                      {question.options?.map((option, idx) => {
+                        const currentValue = formValues[question.id!] || []
+                        const isChecked = Array.isArray(currentValue) && currentValue.includes(option)
+                        
+                        return (
+                          <div 
+                            key={idx} 
+                            className={cn(
+                              "flex items-center space-x-2 sm:space-x-3 px-2 sm:px-3 py-2 sm:py-2.5 rounded-md transition-all duration-200 cursor-pointer group",
+                              isChecked 
+                                ? "bg-primary/10" 
+                                : "hover:bg-muted/50"
+                            )}
+                          >
+                            <Checkbox
+                              id={`${question.id}-${idx}`}
+                              checked={isChecked}
+                              onCheckedChange={(checked) => {
+                                const current = formHook.getValues(question.id!) || []
+                                if (checked) {
+                                  formHook.setValue(question.id!, [...(Array.isArray(current) ? current : []), option], { shouldValidate: false })
+                                } else {
+                                  formHook.setValue(
+                                    question.id!,
+                                    (Array.isArray(current) ? current : []).filter((v: string) => v !== option),
+                                    { shouldValidate: false }
+                                  )
+                                }
+                              }}
+                              style={{ 
+                                borderColor: isChecked ? formColor : undefined,
+                                backgroundColor: isChecked ? formColor : undefined
+                              }}
+                              className="transition-all duration-200 flex-shrink-0"
+                            />
+                            <Label
+                              htmlFor={`${question.id}-${idx}`}
+                              className="font-normal cursor-pointer flex-1 text-sm sm:text-base"
+                            >
+                              {option}
+                            </Label>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {question.type === "short_text" && (
+                    <Input
+                      {...formHook.register(question.id!)}
+                      placeholder="Entrez votre réponse..."
+                      className="h-10 sm:h-11 text-sm sm:text-base"
+                    />
+                  )}
+
+                  {question.type === "long_text" && (
+                    <Textarea
+                      {...formHook.register(question.id!)}
+                      placeholder="Entrez votre réponse..."
+                      rows={4}
+                      className="text-sm sm:text-base resize-none"
+                    />
+                  )}
+                </div>
+                ))
+              )}
+
             </form>
+            </div>
+            
+            {/* Footer with Navigation */}
+            <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-border">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+                {currentSectionIndex > 0 && (
+                  <button
+                    type="button"
+                    onClick={handlePrevious}
+                    className="w-full sm:w-auto px-4 py-2.5 sm:py-2 border border-border rounded-md bg-background hover:bg-muted/50 text-sm font-medium transition-colors"
+                  >
+                    <ChevronLeft className="inline mr-2 h-4 w-4" />
+                    Précédent
+                  </button>
+                )}
+                {currentSectionIndex < allSections.length - 1 ? (
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-md text-sm font-medium text-white transition-colors"
+                    style={{ 
+                      backgroundColor: buttonColor || "var(--color-primary)"
+                    }}
+                  >
+                    Suivant
+                    <ChevronRight className="inline ml-2 h-4 w-4" />
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    form="form-submit"
+                    disabled={isSubmitting}
+                    className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-md text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    style={{ 
+                      backgroundColor: buttonColor || "var(--color-primary)"
+                    }}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      formHook.handleSubmit(onSubmit)()
+                    }}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="inline mr-2 h-4 w-4 animate-spin" />
+                        Envoi...
+                      </>
+                    ) : (
+                      "Soumettre"
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+            
+            {/* Branding */}
             {showBranding && (form.company_name || form.company_logo_url || form.contact_email || form.contact_phone || form.website_url) && (
-              <div className="pt-6 mt-6 border-t">
+              <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-border">
                 {renderBranding()}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   )

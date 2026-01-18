@@ -129,49 +129,49 @@ export function AnalyticsDashboard({
     : 0
 
   return (
-    <div className="space-y-6 lg:space-y-8">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8 w-full min-w-0 max-w-full overflow-x-hidden">
       {/* Header Section */}
-      <div className="space-y-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-1">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{formTitle}</h1>
+      <div className="space-y-3 sm:space-y-4 w-full min-w-0">
+        <div className="flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-start sm:justify-between w-full min-w-0">
+          <div className="space-y-1 min-w-0 flex-1 max-w-full">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight break-words">{formTitle}</h1>
             {formDescription && (
-              <p className="text-sm sm:text-base text-muted-foreground max-w-2xl">
+              <p className="text-xs sm:text-sm lg:text-base text-muted-foreground max-w-2xl break-words">
                 {formDescription}
               </p>
             )}
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Analytics and insights for your form
+            <p className="text-xs text-muted-foreground">
+              Analyses et insights pour votre formulaire
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:flex-shrink-0 min-w-0">
             <Select
               value={dateRange}
               onValueChange={(v: "7d" | "30d" | "90d" | "all") => setDateRange(v)}
             >
-              <SelectTrigger className="w-full sm:w-[160px]">
-                <Calendar className="size-4 mr-2" />
+              <SelectTrigger className="w-full sm:w-[140px] lg:w-[160px]">
+                <Calendar className="size-4 mr-2 flex-shrink-0" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="7d">Last 7 days</SelectItem>
-                <SelectItem value="30d">Last 30 days</SelectItem>
-                <SelectItem value="90d">Last 90 days</SelectItem>
-                <SelectItem value="all">All time</SelectItem>
+                <SelectItem value="7d">7 derniers jours</SelectItem>
+                <SelectItem value="30d">30 derniers jours</SelectItem>
+                <SelectItem value="90d">90 derniers jours</SelectItem>
+                <SelectItem value="all">Tout le temps</SelectItem>
               </SelectContent>
             </Select>
             <Select
               value={source}
               onValueChange={(v: "all" | "qr" | "web") => setSource(v)}
             >
-              <SelectTrigger className="w-full sm:w-[160px]">
-                <Filter className="size-4 mr-2" />
+              <SelectTrigger className="w-full sm:w-[140px] lg:w-[160px]">
+                <Filter className="size-4 mr-2 flex-shrink-0" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All sources</SelectItem>
-                <SelectItem value="qr">QR Code</SelectItem>
-                <SelectItem value="web">Web Link</SelectItem>
+                <SelectItem value="all">Toutes les sources</SelectItem>
+                <SelectItem value="qr">Code QR</SelectItem>
+                <SelectItem value="web">Lien web</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -180,11 +180,11 @@ export function AnalyticsDashboard({
       </div>
 
       {isLoading ? (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* KPI Cards Skeleton */}
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-            {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-32" />
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            {[...Array(3)].map((_, i) => (
+              <Skeleton key={i} className="h-28 sm:h-32" />
             ))}
           </div>
           {/* Charts Skeleton */}
@@ -199,48 +199,48 @@ export function AnalyticsDashboard({
         <>
           {/* KPI Cards Section */}
           {stats && (
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              <Card>
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 w-full min-w-0 max-w-full">
+              <Card className="min-w-0 max-w-full">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Total Responses
+                  <CardTitle className="text-xs sm:text-sm font-medium">
+                    Total des réponses
                   </CardTitle>
-                  <Users className="size-4 text-muted-foreground" />
+                  <Users className="size-3 sm:size-4 text-muted-foreground flex-shrink-0" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{stats.total}</div>
+                  <div className="text-2xl sm:text-3xl font-bold">{stats.total}</div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    All time submissions
+                    Soumissions de tout le temps
                   </p>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="min-w-0 max-w-full">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    QR Code Responses
+                  <CardTitle className="text-xs sm:text-sm font-medium">
+                    Réponses par code QR
                   </CardTitle>
-                  <QrCode className="size-4 text-muted-foreground" />
+                  <QrCode className="size-3 sm:size-4 text-muted-foreground flex-shrink-0" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{stats.qr}</div>
+                  <div className="text-2xl sm:text-3xl font-bold">{stats.qr}</div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {qrPercentage}% of total
+                    {qrPercentage}% du total
                   </p>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="min-w-0 max-w-full">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Web Link Responses
+                  <CardTitle className="text-xs sm:text-sm font-medium">
+                    Réponses par lien web
                   </CardTitle>
-                  <LinkIcon className="size-4 text-muted-foreground" />
+                  <LinkIcon className="size-3 sm:size-4 text-muted-foreground flex-shrink-0" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{stats.web}</div>
+                  <div className="text-2xl sm:text-3xl font-bold">{stats.web}</div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {webPercentage}% of total
+                    {webPercentage}% du total
                   </p>
                 </CardContent>
               </Card>
@@ -266,7 +266,7 @@ export function AnalyticsDashboard({
 
           {/* Charts Section */}
           {stats && stats.total > 0 && (
-            <div className="grid gap-4">
+            <div className="grid gap-4 sm:gap-6">
               {/* <Card>
                 <CardHeader>
                   <CardTitle className="text-base font-semibold">
@@ -286,24 +286,24 @@ export function AnalyticsDashboard({
           )}
 
           {/* Questions and Responses Section */}
-          <div className="grid gap-6 lg:grid-cols-3">
+          <div className="grid gap-4 sm:gap-6 lg:grid-cols-3 w-full min-w-0 max-w-full">
             {/* Question Analytics - Takes 2 columns on desktop */}
-            <div className="lg:col-span-2 space-y-6 order-2 lg:order-1">
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6 order-2 lg:order-1 min-w-0 max-w-full overflow-x-hidden">
               {questionAnalytics.length > 0 ? (
                 <QuestionAnalytics analytics={questionAnalytics} />
               ) : (
-                <Card>
+                <Card className="min-w-0 max-w-full">
                   <CardHeader>
-                    <CardTitle>Question Analytics</CardTitle>
-                    <CardDescription>
-                      Insights for each question in your form
+                    <CardTitle className="text-base sm:text-lg">Analyses par question</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">
+                      Insights pour chaque question de votre formulaire
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center py-12 text-muted-foreground">
-                      <p className="text-sm">No question data available</p>
+                    <div className="text-center py-8 sm:py-12 text-muted-foreground">
+                      <p className="text-xs sm:text-sm">Aucune donnée de question disponible</p>
                       <p className="text-xs mt-1">
-                        Analytics will appear once you receive responses
+                        Les analyses apparaîtront une fois que vous recevrez des réponses
                       </p>
                     </div>
                   </CardContent>
@@ -312,7 +312,7 @@ export function AnalyticsDashboard({
             </div>
 
             {/* Recent Responses - Takes 1 column on desktop */}
-            <div className="lg:col-span-1 order-1 lg:order-2">
+            <div className="lg:col-span-1 order-1 lg:order-2 min-w-0 max-w-full">
               <ResponseList responses={responses} />
             </div>
           </div>

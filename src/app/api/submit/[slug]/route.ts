@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createAnonymousClient } from "@/lib/supabase/server"
-import type { FormSubmission } from "@/features/forms/types/form"
+import type { FormSubmission } from "@/types/database.types"
 
 export async function POST(
   request: NextRequest,
@@ -25,8 +25,8 @@ export async function POST(
       console.error("Form lookup error:", formError)
       return NextResponse.json(
         { 
-          error: "Form not found or not published",
-          details: formError?.message || "Unknown error",
+          error: "Formulaire introuvable ou non publié",
+          details: formError?.message || "Erreur inconnue",
           code: formError?.code || "UNKNOWN"
         },
         { status: 404 }
@@ -44,8 +44,8 @@ export async function POST(
       console.error("Failed to create response:", responseError)
       return NextResponse.json(
         { 
-          error: "Failed to create response",
-          details: responseError?.message || "Unknown error",
+          error: "Échec de la création de la réponse",
+          details: responseError?.message || "Erreur inconnue",
           code: responseError?.code || "UNKNOWN"
         },
         { status: 500 }
@@ -75,8 +75,8 @@ export async function POST(
       console.error("Failed to save answers:", answersError)
       return NextResponse.json(
         { 
-          error: "Failed to save answers",
-          details: answersError?.message || "Unknown error",
+          error: "Échec de l'enregistrement des réponses",
+          details: answersError?.message || "Erreur inconnue",
           code: answersError?.code || "UNKNOWN"
         },
         { status: 500 }
@@ -86,7 +86,7 @@ export async function POST(
     return NextResponse.json({ success: true })
   } catch (error: unknown) {
     const errorMessage =
-      error instanceof Error ? error.message : "Internal server error"
+      error instanceof Error ? error.message : "Erreur interne du serveur"
     return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }

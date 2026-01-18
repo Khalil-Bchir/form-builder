@@ -1,17 +1,16 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import type { FormQuestion } from "../types/form"
+import type { FormQuestionWithOptions } from "@/types/database.types"
 import { getQuestionTypeEmoji } from "../lib/form-utils"
+import { cn } from "@/lib/utils"
 
 interface QuestionPreviewProps {
-  question: FormQuestion
+  question: FormQuestionWithOptions
   index: number
 }
 
@@ -20,11 +19,27 @@ export function QuestionPreview({ question, index }: QuestionPreviewProps) {
     switch (question.type) {
       case "single_choice":
         return (
-          <RadioGroup>
+          <RadioGroup
+            value=""
+            className="space-y-2.5"
+          >
             {question.options?.map((option, idx) => (
-              <div key={idx} className="flex items-center space-x-2">
-                <RadioGroupItem value={option} id={`option-${idx}`} />
-                <Label htmlFor={`option-${idx}`}>{option}</Label>
+              <div 
+                key={idx} 
+                className="flex items-center space-x-2 sm:space-x-3 px-2 sm:px-3 py-2 sm:py-2.5 rounded-md transition-all duration-200 cursor-pointer group hover:bg-muted/50"
+              >
+                <RadioGroupItem 
+                  value={option} 
+                  id={`preview-${index}-${idx}`}
+                  disabled
+                  className="transition-all duration-200 flex-shrink-0"
+                />
+                <Label
+                  htmlFor={`preview-${index}-${idx}`}
+                  className="font-normal cursor-pointer flex-1 text-sm sm:text-base"
+                >
+                  {option}
+                </Label>
               </div>
             ))}
           </RadioGroup>
@@ -32,21 +47,46 @@ export function QuestionPreview({ question, index }: QuestionPreviewProps) {
 
       case "multiple_choice":
         return (
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {question.options?.map((option, idx) => (
-              <div key={idx} className="flex items-center space-x-2">
-                <Checkbox id={`checkbox-${idx}`} />
-                <Label htmlFor={`checkbox-${idx}`}>{option}</Label>
+              <div 
+                key={idx} 
+                className="flex items-center space-x-2 sm:space-x-3 px-2 sm:px-3 py-2 sm:py-2.5 rounded-md transition-all duration-200 cursor-pointer group hover:bg-muted/50"
+              >
+                <Checkbox
+                  id={`preview-${index}-${idx}`}
+                  disabled
+                  className="transition-all duration-200 flex-shrink-0"
+                />
+                <Label
+                  htmlFor={`preview-${index}-${idx}`}
+                  className="font-normal cursor-pointer flex-1 text-sm sm:text-base"
+                >
+                  {option}
+                </Label>
               </div>
             ))}
           </div>
         )
 
       case "short_text":
-        return <Input placeholder="Enter your answer..." disabled />
+        return (
+          <Input 
+            placeholder="Entrez votre réponse..." 
+            disabled 
+            className="h-10 sm:h-11 text-sm sm:text-base"
+          />
+        )
 
       case "long_text":
-        return <Textarea placeholder="Enter your answer..." disabled rows={4} />
+        return (
+          <Textarea 
+            placeholder="Entrez votre réponse..." 
+            disabled 
+            rows={4}
+            className="text-sm sm:text-base resize-none"
+          />
+        )
 
       default:
         return null
@@ -54,24 +94,19 @@ export function QuestionPreview({ question, index }: QuestionPreviewProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <span>{getQuestionTypeEmoji(question.type)}</span>
-              <span>
-                {question.text}
-                {question.required && (
-                  <span className="text-destructive ml-1">*</span>
-                )}
-              </span>
-            </CardTitle>
-          </div>
-          <Badge variant="secondary">Question {index + 1}</Badge>
-        </div>
-      </CardHeader>
-      <CardContent>{renderQuestion()}</CardContent>
-    </Card>
+    <div 
+      className="space-y-3 py-4 sm:py-6 border-b border-border last:border-b-0"
+    >
+      <Label className="text-base sm:text-lg md:text-xl font-semibold flex items-center gap-2 sm:gap-2.5 flex-wrap text-foreground">
+        <span className="text-base sm:text-lg md:text-xl">{getQuestionTypeEmoji(question.type)}</span>
+        <span className="break-words">
+          {question.text}
+          {question.required && (
+            <span className="text-destructive ml-1">*</span>
+          )}
+        </span>
+      </Label>
+      {renderQuestion()}
+    </div>
   )
 }

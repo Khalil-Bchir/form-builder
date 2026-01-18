@@ -44,16 +44,18 @@ export default async function AnalyticsPage({ params }: AnalyticsPageProps) {
   ])
 
   return (
-    <div className="flex flex-1 flex-col p-4 md:p-6 lg:p-8">
-      <AnalyticsDashboard
-        formId={id}
-        formTitle={form.title}
-        formDescription={form.description}
-        initialStats={stats}
-        initialQuestionAnalytics={questionAnalytics}
-        initialResponses={responsesData.data}
-        initialTrends={trends}
-      />
+    <div className="flex flex-1 flex-col p-4 sm:p-5 md:p-6 lg:p-8 overflow-x-hidden max-w-full min-w-0">
+      <div className="w-full min-w-0 max-w-full">
+        <AnalyticsDashboard
+          formId={id}
+          formTitle={form.title}
+          formDescription={form.description}
+          initialStats={stats}
+          initialQuestionAnalytics={questionAnalytics}
+          initialResponses={responsesData.data}
+          initialTrends={trends}
+        />
+      </div>
     </div>
   )
 }

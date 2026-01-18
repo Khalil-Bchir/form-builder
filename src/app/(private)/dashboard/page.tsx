@@ -154,80 +154,80 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+    <div className="flex flex-1 flex-col gap-4 sm:gap-5 md:gap-6 p-4 sm:p-5 md:p-6 lg:p-8">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-sm sm:text-base text-muted-foreground mt-1">
-            Overview of your forms and responses
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">Tableau de bord</h1>
+          <p className="text-xs sm:text-sm md:text-base text-muted-foreground mt-1">
+            Aperçu de vos formulaires et réponses
           </p>
         </div>
         <Button asChild className="w-full sm:w-auto">
           <Link href="/dashboard/forms/new">
             <Plus className="size-4 mr-2" />
-            New Form
+            Nouveau formulaire
           </Link>
         </Button>
       </div>
 
       {/* Key Metrics */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Forms</CardTitle>
-            <FileText className="size-4 text-muted-foreground" />
+            <CardTitle className="text-xs sm:text-sm font-medium">Total des formulaires</CardTitle>
+            <FileText className="size-3 sm:size-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalForms}</div>
+            <div className="text-xl sm:text-2xl font-bold">{stats.totalForms}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {stats.publishedForms} published • {stats.draftForms} drafts
+              {stats.publishedForms} publiés • {stats.draftForms} brouillons
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Responses</CardTitle>
-            <Users className="size-4 text-muted-foreground" />
+            <CardTitle className="text-xs sm:text-sm font-medium">Total des réponses</CardTitle>
+            <Users className="size-3 sm:size-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalResponses.toLocaleString()}</div>
+            <div className="text-xl sm:text-2xl font-bold">{stats.totalResponses.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {stats.recentResponses} in last 7 days
+              {stats.recentResponses} dans les 7 derniers jours
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg per Form</CardTitle>
-            <TrendingUp className="size-4 text-muted-foreground" />
+            <CardTitle className="text-xs sm:text-sm font-medium">Moyenne par formulaire</CardTitle>
+            <TrendingUp className="size-3 sm:size-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{avgResponsesPerForm}</div>
+            <div className="text-xl sm:text-2xl font-bold">{avgResponsesPerForm}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              Responses per published form
+              Réponses par formulaire publié
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Response Sources</CardTitle>
-            <Activity className="size-4 text-muted-foreground" />
+            <CardTitle className="text-xs sm:text-sm font-medium">Sources des réponses</CardTitle>
+            <Activity className="size-3 sm:size-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
               <div>
-                <div className="text-xl font-bold">{stats.qrResponses}</div>
+                <div className="text-lg sm:text-xl font-bold">{stats.qrResponses}</div>
                 <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                   <QrCode className="size-3" />
-                  QR Code
+                  Code QR
                 </p>
               </div>
               <div>
-                <div className="text-xl font-bold">{stats.webResponses}</div>
+                <div className="text-lg sm:text-xl font-bold">{stats.webResponses}</div>
                 <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                   <Globe className="size-3" />
                   Web
@@ -239,21 +239,21 @@ export default async function DashboardPage() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 sm:gap-5 md:gap-6 lg:grid-cols-3">
         {/* Top Performing Forms */}
-        <div className="lg:col-span-2 space-y-6 order-2 lg:order-1">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-5 md:space-y-6 order-2 lg:order-1">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Top Performing Forms</CardTitle>
+                  <CardTitle>Formulaires les plus performants</CardTitle>
                   <CardDescription>
-                    Forms with the most responses
+                    Formulaires avec le plus de réponses
                   </CardDescription>
                 </div>
                 <Button variant="ghost" size="sm" asChild>
                   <Link href="/dashboard/forms">
-                    View All
+                    Voir tout
                     <ArrowUpRight className="size-4 ml-1" />
                   </Link>
                 </Button>
@@ -266,27 +266,27 @@ export default async function DashboardPage() {
                     <Link
                       key={form.id}
                       href={`/dashboard/forms/${form.id}/analytics`}
-                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border rounded-lg hover:bg-accent/50 transition-colors group"
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 sm:p-4 border rounded-lg hover:bg-accent/50 transition-colors group"
                     >
-                      <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <div className="flex items-center justify-center size-10 rounded-lg bg-primary/10 text-primary font-semibold flex-shrink-0">
+                      <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                        <div className="flex items-center justify-center size-8 sm:size-10 rounded-lg bg-primary/10 text-primary font-semibold flex-shrink-0 text-sm sm:text-base">
                           {index + 1}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate group-hover:text-primary transition-colors">
+                          <p className="text-sm sm:text-base font-medium truncate group-hover:text-primary transition-colors">
                             {form.title}
                           </p>
                           <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                            {form.description || "No description"}
+                            {form.description || "Aucune description"}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4 flex-shrink-0">
+                      <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
                         <div className="text-right">
-                          <div className="font-semibold">{form.responseCount.toLocaleString()}</div>
-                          <p className="text-xs text-muted-foreground">responses</p>
+                          <div className="text-sm sm:text-base font-semibold">{form.responseCount.toLocaleString()}</div>
+                          <p className="text-xs text-muted-foreground">réponses</p>
                         </div>
-                        <BarChart3 className="size-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                        <BarChart3 className="size-4 sm:size-5 text-muted-foreground group-hover:text-primary transition-colors" />
                       </div>
                     </Link>
                   ))}
@@ -294,9 +294,9 @@ export default async function DashboardPage() {
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <FileText className="size-12 mx-auto mb-4 opacity-50" />
-                  <p className="mb-2">No published forms yet</p>
+                  <p className="mb-2">Aucun formulaire publié pour le moment</p>
                   <Button asChild variant="outline" size="sm">
-                    <Link href="/dashboard/forms/new">Create your first form</Link>
+                    <Link href="/dashboard/forms/new">Créer votre premier formulaire</Link>
                   </Button>
                 </div>
               )}
@@ -308,14 +308,14 @@ export default async function DashboardPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Recent Forms</CardTitle>
+                  <CardTitle>Formulaires récents</CardTitle>
                   <CardDescription>
-                    Your latest form activity
+                    Votre dernière activité de formulaire
                   </CardDescription>
                 </div>
                 <Button variant="ghost" size="sm" asChild>
                   <Link href="/dashboard/forms">
-                    View All
+                    Voir tout
                     <ArrowUpRight className="size-4 ml-1" />
                   </Link>
                 </Button>
@@ -331,12 +331,12 @@ export default async function DashboardPage() {
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-medium truncate">{form.title}</p>
+                          <p className="text-sm sm:text-base font-medium truncate">{form.title}</p>
                           <Badge
                             variant={form.status === "published" ? "default" : "secondary"}
                             className="text-xs"
                           >
-                            {form.status}
+                            {form.status === "published" ? "Publié" : "Brouillon"}
                           </Badge>
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">
@@ -363,9 +363,9 @@ export default async function DashboardPage() {
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <FileText className="size-12 mx-auto mb-4 opacity-50" />
-                  <p className="mb-2">No forms yet</p>
+                  <p className="mb-2">Aucun formulaire pour le moment</p>
                   <Button asChild variant="outline" size="sm">
-                    <Link href="/dashboard/forms/new">Create your first form</Link>
+                    <Link href="/dashboard/forms/new">Créer votre premier formulaire</Link>
                   </Button>
                 </div>
               )}
@@ -374,7 +374,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Sidebar - Recent Activity & Quick Stats */}
-        <div className="space-y-6 order-1 lg:order-2">
+        <div className="space-y-4 sm:space-y-5 md:space-y-6 order-1 lg:order-2">
           {/* Recent Activity */}
           {/* <Card>
             <CardHeader>
@@ -431,27 +431,27 @@ export default async function DashboardPage() {
           {/* Quick Stats */}
           <Card>
             <CardHeader>
-              <CardTitle>Quick Insights</CardTitle>
+              <CardTitle>Aperçu rapide</CardTitle>
               <CardDescription>
-                At a glance statistics
+                Statistiques en un coup d'œil
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Published Forms</span>
+                  <span className="text-sm text-muted-foreground">Formulaires publiés</span>
                   <span className="font-semibold">{stats.publishedForms}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Draft Forms</span>
+                  <span className="text-sm text-muted-foreground">Formulaires brouillons</span>
                   <span className="font-semibold">{stats.draftForms}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Total Responses</span>
+                  <span className="text-sm text-muted-foreground">Total des réponses</span>
                   <span className="font-semibold">{stats.totalResponses.toLocaleString()}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">This Week</span>
+                  <span className="text-sm text-muted-foreground">Cette semaine</span>
                   <span className="font-semibold text-primary">{stats.recentResponses}</span>
                 </div>
               </div>
@@ -460,7 +460,7 @@ export default async function DashboardPage() {
                   <Button asChild className="w-full" variant="outline">
                     <Link href="/dashboard/forms">
                       <FileText className="size-4 mr-2" />
-                      Manage Forms
+                      Gérer les formulaires
                     </Link>
                   </Button>
                 </div>

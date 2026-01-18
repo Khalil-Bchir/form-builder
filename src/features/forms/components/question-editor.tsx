@@ -23,12 +23,12 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Card, CardContent } from "@/components/ui/card"
-import type { FormQuestion, QuestionType } from "../types/form"
+import type { FormQuestionWithOptions, QuestionType } from "@/types/database.types"
 import { getQuestionTypeLabel, getQuestionTypeEmoji } from "../lib/form-utils"
 
 interface QuestionEditorProps {
-  question?: FormQuestion
-  onSave: (question: Omit<FormQuestion, "id" | "form_id" | "created_at">) => void
+  question?: FormQuestionWithOptions
+  onSave: (question: Omit<FormQuestionWithOptions, "id" | "form_id" | "created_at">) => void
   onDelete?: () => void
   mode?: "create" | "edit"
 }
@@ -41,7 +41,7 @@ export function QuestionEditor({
 }: QuestionEditorProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [type, setType] = useState<QuestionType>(
-    question?.type || "short_text"
+    (question?.type as QuestionType) || "short_text"
   )
   const [text, setText] = useState(question?.text || "")
   const [required, setRequired] = useState(question?.required || false)
@@ -74,8 +74,9 @@ export function QuestionEditor({
       order: question?.order || 0,
       type,
       text: text.trim(),
-      required,
+      required: required ?? false,
       options: type === "single_choice" || type === "multiple_choice" ? options : undefined,
+      section_id: question?.section_id ?? null,
     })
 
     setIsOpen(false)
@@ -96,24 +97,24 @@ export function QuestionEditor({
       <DialogTrigger asChild>
         {mode === "edit" ? (
           <Button variant="ghost" size="sm">
-            Edit
+            Modifier
           </Button>
         ) : (
-          <Button>Add Question</Button>
+          <Button>Ajouter une question</Button>
         )}
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
         <DialogHeader>
           <DialogTitle>
-            {mode === "edit" ? "Edit Question" : "Add Question"}
+            {mode === "edit" ? "Modifier la question" : "Ajouter une question"}
           </DialogTitle>
           <DialogDescription>
-            Configure your question type and settings
+            Configurez le type de question et les paramètres
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="type">Question Type</Label>
+            <Label htmlFor="type">Type de question</Label>
             <Select
               value={type}
               onValueChange={(value) => setType(value as QuestionType)}
@@ -123,28 +124,28 @@ export function QuestionEditor({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="short_text">
-                  {getQuestionTypeEmoji("short_text")} Short Text
+                  {getQuestionTypeEmoji("short_text")} Texte court
                 </SelectItem>
                 <SelectItem value="long_text">
-                  {getQuestionTypeEmoji("long_text")} Long Text
+                  {getQuestionTypeEmoji("long_text")} Texte long
                 </SelectItem>
                 <SelectItem value="single_choice">
-                  {getQuestionTypeEmoji("single_choice")} Single Choice
+                  {getQuestionTypeEmoji("single_choice")} Choix unique
                 </SelectItem>
                 <SelectItem value="multiple_choice">
-                  {getQuestionTypeEmoji("multiple_choice")} Multiple Choice
+                  {getQuestionTypeEmoji("multiple_choice")} Choix multiple
                 </SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="text">Question Text</Label>
+            <Label htmlFor="text">Texte de la question</Label>
             <Textarea
               id="text"
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="Enter your question..."
+              placeholder="Entrez votre question..."
               rows={2}
             />
           </div>
@@ -174,7 +175,7 @@ export function QuestionEditor({
                   <Input
                     value={newOption}
                     onChange={(e) => setNewOption(e.target.value)}
-                    placeholder="Add option..."
+                    placeholder="Ajouter une option..."
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault()
@@ -201,15 +202,15 @@ export function QuestionEditor({
                 checked={required}
                 onCheckedChange={setRequired}
               />
-              <Label htmlFor="required">Required</Label>
+              <Label htmlFor="required">Obligatoire</Label>
             </div>
             <div className="flex gap-2">
               {mode === "edit" && onDelete && (
                 <Button type="button" variant="destructive" onClick={onDelete}>
-                  Delete
+                  Supprimer
                 </Button>
               )}
-              <Button onClick={handleSave}>Save</Button>
+              <Button onClick={handleSave}>Enregistrer</Button>
             </div>
           </div>
         </div>

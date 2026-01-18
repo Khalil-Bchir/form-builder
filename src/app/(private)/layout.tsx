@@ -29,8 +29,8 @@ export default async function PrivateLayout({
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset className="flex flex-col min-h-screen">
-        <header className="sticky top-0 z-50 flex h-14 sm:h-16 shrink-0 items-center gap-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="flex items-center gap-2 px-2 sm:px-4 w-full">
+        <header className="sticky top-0 z-50 flex h-12 sm:h-14 md:h-16 shrink-0 items-center gap-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="flex items-center gap-2 px-2 sm:px-3 md:px-4 w-full">
             <SidebarTrigger className="-ml-1" />
             <Separator
               orientation="vertical"

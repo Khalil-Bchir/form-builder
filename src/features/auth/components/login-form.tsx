@@ -28,8 +28,8 @@ import {
 import { createClient } from "@/lib/supabase/client"
 
 const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  email: z.string().email("Veuillez entrer une adresse e-mail valide"),
+  password: z.string().min(6, "Le mot de passe doit contenir au moins 6 caractères"),
 })
 
 type LoginFormValues = z.infer<typeof loginSchema>
@@ -63,11 +63,11 @@ export function LoginForm({
         return
       }
 
-      toast.success("Successfully signed in!")
+      toast.success("Connexion réussie !")
       router.push("/dashboard")
       router.refresh()
     } catch (error) {
-      toast.error("An unexpected error occurred")
+      toast.error("Une erreur inattendue s'est produite")
     } finally {
       setIsLoading(false)
     }
@@ -82,11 +82,11 @@ export function LoginForm({
               <div className="flex size-8 items-center justify-center rounded-md">
                 <GalleryVerticalEnd className="size-6" />
               </div>
-              <h1 className="text-xl font-bold">Welcome back</h1>
+              <h1 className="text-xl font-bold">Bon retour</h1>
               <FieldDescription>
-                Don&apos;t have an account?{" "}
+                Vous n'avez pas de compte ?{" "}
                 <Link href="/auth/signup" className="text-primary underline">
-                  Sign up
+                  S'inscrire
                 </Link>
               </FieldDescription>
             </div>
@@ -96,12 +96,12 @@ export function LoginForm({
               render={({ field }) => (
                 <FormItem>
                   <Field>
-                    <FieldLabel htmlFor="email">Email</FieldLabel>
+                    <FieldLabel htmlFor="email">E-mail</FieldLabel>
                     <FormControl>
                       <Input
                         id="email"
                         type="email"
-                        placeholder="m@example.com"
+                        placeholder="m@exemple.com"
                         {...field}
                         disabled={isLoading}
                       />
@@ -117,12 +117,12 @@ export function LoginForm({
               render={({ field }) => (
                 <FormItem>
                   <Field>
-                    <FieldLabel htmlFor="password">Password</FieldLabel>
+                    <FieldLabel htmlFor="password">Mot de passe</FieldLabel>
                     <FormControl>
                       <Input
                         id="password"
                         type="password"
-                        placeholder="Enter your password"
+                        placeholder="Entrez votre mot de passe"
                         {...field}
                         disabled={isLoading}
                       />
@@ -134,7 +134,7 @@ export function LoginForm({
             />
             <Field>
               <Button type="submit" disabled={isLoading} className="w-full">
-                {isLoading ? "Signing in..." : "Sign in"}
+                {isLoading ? "Connexion..." : "Se connecter"}
               </Button>
             </Field>
             <FieldDescription className="text-center">
@@ -142,7 +142,7 @@ export function LoginForm({
                 href="/auth/forgot-password"
                 className="text-primary underline text-sm"
               >
-                Forgot your password?
+                Mot de passe oublié ?
               </Link>
             </FieldDescription>
           </FieldGroup>

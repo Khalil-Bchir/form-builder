@@ -27,7 +27,7 @@ import {
 import { createClient } from "@/lib/supabase/client"
 
 const forgotPasswordSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  email: z.string().email("Veuillez entrer une adresse e-mail valide"),
 })
 
 type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>
@@ -60,9 +60,9 @@ export function ForgotPasswordForm({
       }
 
       setIsSubmitted(true)
-      toast.success("Password reset email sent! Check your inbox.")
+      toast.success("E-mail de réinitialisation envoyé ! Vérifiez votre boîte de réception.")
     } catch (error) {
-      toast.error("An unexpected error occurred")
+      toast.error("Une erreur inattendue s'est produite")
     } finally {
       setIsLoading(false)
     }
@@ -76,14 +76,14 @@ export function ForgotPasswordForm({
             <Mail className="size-6 text-primary" />
           </div>
           <div>
-            <h2 className="text-xl font-bold">Check your email</h2>
+            <h2 className="text-xl font-bold">Vérifiez votre e-mail</h2>
             <p className="text-muted-foreground mt-2">
-              We&apos;ve sent you a password reset link. Please check your email
-              and click the link to reset your password.
+              Nous vous avons envoyé un lien de réinitialisation de mot de passe. Veuillez vérifier votre e-mail
+              et cliquer sur le lien pour réinitialiser votre mot de passe.
             </p>
           </div>
           <Button asChild variant="outline" className="w-full">
-            <Link href="/auth/login">Back to sign in</Link>
+            <Link href="/auth/login">Retour à la connexion</Link>
           </Button>
         </div>
       </div>
@@ -96,10 +96,10 @@ export function ForgotPasswordForm({
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <FieldGroup>
             <div className="flex flex-col items-center gap-2 text-center">
-              <h1 className="text-xl font-bold">Reset Password</h1>
+              <h1 className="text-xl font-bold">Réinitialiser le mot de passe</h1>
               <FieldDescription>
-                Enter your email address and we&apos;ll send you a link to reset
-                your password.
+                Entrez votre adresse e-mail et nous vous enverrons un lien pour réinitialiser
+                votre mot de passe.
               </FieldDescription>
             </div>
             <FormField
@@ -108,12 +108,12 @@ export function ForgotPasswordForm({
               render={({ field }) => (
                 <FormItem>
                   <Field>
-                    <FieldLabel htmlFor="email">Email</FieldLabel>
+                    <FieldLabel htmlFor="email">E-mail</FieldLabel>
                     <FormControl>
                       <Input
                         id="email"
                         type="email"
-                        placeholder="m@example.com"
+                        placeholder="m@exemple.com"
                         {...field}
                         disabled={isLoading}
                       />
@@ -125,12 +125,12 @@ export function ForgotPasswordForm({
             />
             <Field>
               <Button type="submit" disabled={isLoading} className="w-full">
-                {isLoading ? "Sending..." : "Send Reset Link"}
+                {isLoading ? "Envoi..." : "Envoyer le lien de réinitialisation"}
               </Button>
             </Field>
             <FieldDescription className="text-center">
               <Link href="/auth/login" className="text-primary underline">
-                Back to sign in
+                Retour à la connexion
               </Link>
             </FieldDescription>
           </FieldGroup>

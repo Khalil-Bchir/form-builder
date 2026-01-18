@@ -15,10 +15,10 @@ export function validateSlug(slug: string): boolean {
 
 export function getQuestionTypeLabel(type: string): string {
   const labels: Record<string, string> = {
-    single_choice: "Single Choice",
-    multiple_choice: "Multiple Choice",
-    short_text: "Short Text",
-    long_text: "Long Text",
+    single_choice: "Choix unique",
+    multiple_choice: "Choix multiple",
+    short_text: "Texte court",
+    long_text: "Texte long",
   }
   return labels[type] || type
 }

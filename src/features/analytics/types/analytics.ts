@@ -1,3 +1,5 @@
+import type { FormResponse as BaseFormResponse } from "@/types/database.types"
+
 export interface ResponseStats {
   total: number
   qr: number
@@ -13,10 +15,8 @@ export interface QuestionAnalytics {
   textResponses?: string[]
 }
 
-export interface FormResponse {
-  id: string
-  created_at: string
-  source: "qr" | "web"
+// Extended FormResponse with answers for analytics
+export interface FormResponse extends BaseFormResponse {
   answers: Array<{
     questionId: string
     questionText: string

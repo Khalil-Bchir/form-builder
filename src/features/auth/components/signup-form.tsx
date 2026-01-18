@@ -29,12 +29,12 @@ import { createClient } from "@/lib/supabase/client"
 
 const signupSchema = z
   .object({
-    email: z.string().email("Please enter a valid email address"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
+    email: z.string().email("Veuillez entrer une adresse e-mail valide"),
+    password: z.string().min(6, "Le mot de passe doit contenir au moins 6 caractères"),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
+    message: "Les mots de passe ne correspondent pas",
     path: ["confirmPassword"],
   })
 
@@ -75,16 +75,16 @@ export function SignupForm({
 
       // Check if email confirmation is required
       if (authData.user && !authData.session) {
-        toast.success("Account created! Please check your email to verify your account.")
+        toast.success("Compte créé ! Veuillez vérifier votre e-mail pour confirmer votre compte.")
         router.push("/auth/signup-success")
       } else if (authData.session) {
         // Auto-confirmed (if email confirmation is disabled in Supabase)
-        toast.success("Account created successfully!")
+        toast.success("Compte créé avec succès !")
         router.push("/dashboard")
         router.refresh()
       }
     } catch (error) {
-      toast.error("An unexpected error occurred")
+      toast.error("Une erreur inattendue s'est produite")
     } finally {
       setIsLoading(false)
     }
@@ -99,11 +99,11 @@ export function SignupForm({
               <div className="flex size-8 items-center justify-center rounded-md">
                 <GalleryVerticalEnd className="size-6" />
               </div>
-              <h1 className="text-xl font-bold">Create an account</h1>
+              <h1 className="text-xl font-bold">Créer un compte</h1>
               <FieldDescription>
-                Already have an account?{" "}
+                Vous avez déjà un compte ?{" "}
                 <Link href="/auth/login" className="text-primary underline">
-                  Sign in
+                  Se connecter
                 </Link>
               </FieldDescription>
             </div>
@@ -113,12 +113,12 @@ export function SignupForm({
               render={({ field }) => (
                 <FormItem>
                   <Field>
-                    <FieldLabel htmlFor="email">Email</FieldLabel>
+                    <FieldLabel htmlFor="email">E-mail</FieldLabel>
                     <FormControl>
                       <Input
                         id="email"
                         type="email"
-                        placeholder="m@example.com"
+                        placeholder="m@exemple.com"
                         {...field}
                         disabled={isLoading}
                       />
@@ -134,12 +134,12 @@ export function SignupForm({
               render={({ field }) => (
                 <FormItem>
                   <Field>
-                    <FieldLabel htmlFor="password">Password</FieldLabel>
+                    <FieldLabel htmlFor="password">Mot de passe</FieldLabel>
                     <FormControl>
                       <Input
                         id="password"
                         type="password"
-                        placeholder="Create a password"
+                        placeholder="Créer un mot de passe"
                         {...field}
                         disabled={isLoading}
                       />
@@ -156,13 +156,13 @@ export function SignupForm({
                 <FormItem>
                   <Field>
                     <FieldLabel htmlFor="confirmPassword">
-                      Confirm Password
+                      Confirmer le mot de passe
                     </FieldLabel>
                     <FormControl>
                       <Input
                         id="confirmPassword"
                         type="password"
-                        placeholder="Confirm your password"
+                        placeholder="Confirmez votre mot de passe"
                         {...field}
                         disabled={isLoading}
                       />
@@ -174,7 +174,7 @@ export function SignupForm({
             />
             <Field>
               <Button type="submit" disabled={isLoading} className="w-full">
-                {isLoading ? "Creating account..." : "Create account"}
+                {isLoading ? "Création du compte..." : "Créer un compte"}
               </Button>
             </Field>
           </FieldGroup>

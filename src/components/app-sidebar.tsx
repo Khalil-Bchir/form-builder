@@ -43,13 +43,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const navMain = [
     {
-      title: "Dashboard",
+      title: "Tableau de bord",
       url: "/dashboard",
       icon: LayoutDashboard,
       isActive: pathname === "/dashboard",
     },
     {
-      title: "Forms",
+      title: "Formulaires",
       url: "/dashboard/forms",
       icon: FileText,
       isActive: pathname === "/dashboard/forms",
@@ -67,8 +67,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <FileText className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">Form Builder</span>
-                  <span className="truncate text-xs">Create & Analyze</span>
+                  <span className="truncate font-medium">Créateur de formulaires</span>
+                  <span className="truncate text-xs">Créer et analyser</span>
                 </div>
               </Link>
             </SidebarMenuButton>
