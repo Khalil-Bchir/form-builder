@@ -1,15 +1,20 @@
 "use client"
 
+import { useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { FormSettings } from "./form-settings"
+import { FormSettings, type FormSettingsRef } from "./form-settings"
 import type { Form } from "@/types/database.types"
 
+// DraftForm type for forms without database-generated id
+type DraftForm = Omit<Form, "id" | "user_id"> & { id?: string; user_id?: string }
+
 interface FormCustomizationContentProps {
-  form: Form
+  form: Form | DraftForm
   isDraft?: boolean
   title?: string
   onSave?: () => Promise<void>
   isSaving?: boolean
+  onPersonalizationSaveReady?: (saveFn: () => Promise<boolean>) => void
 }
 
 export function FormCustomizationContent({ 
@@ -17,9 +22,11 @@ export function FormCustomizationContent({
   isDraft = false,
   title,
   onSave,
-  isSaving = false
+  isSaving = false,
+  onPersonalizationSaveReady
 }: FormCustomizationContentProps) {
   const router = useRouter()
+  const formSettingsRef = useRef<FormSettingsRef>(null)
 
   const handleUpdate = () => {
     if (isDraft && onSave) {
@@ -31,6 +38,13 @@ export function FormCustomizationContent({
       router.refresh()
     }
   }
+
+  // Expose save function to parent
+  useEffect(() => {
+    if (onPersonalizationSaveReady && formSettingsRef.current) {
+      onPersonalizationSaveReady(() => formSettingsRef.current?.savePersonalization() || Promise.resolve(false))
+    }
+  }, [onPersonalizationSaveReady, form?.id])
 
   // Check if form has a title (either from form.title or passed title prop)
   const hasTitle = (form.title && form.title.trim().length > 0) || (title && title.trim().length > 0)
@@ -48,8 +62,15 @@ export function FormCustomizationContent({
           )}
         </p>
       </div>
-      {form.id || hasTitle ? (
-        <FormSettings form={form} onUpdate={handleUpdate} />
+      {(form.id || hasTitle) ? (
+        <FormSettings 
+          ref={formSettingsRef}
+          form={form as Form | DraftForm} 
+          onUpdate={handleUpdate}
+          hideSaveButton={isDraft}
+          hidePublicationSection={true}
+          onSaveFromParent={onSave}
+        />
       ) : (
         <div className="text-center py-8 text-muted-foreground">
           <p className="mb-4">Ajoutez un titre à votre formulaire pour commencer la personnalisation.</p>

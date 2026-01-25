@@ -22,8 +22,10 @@ import { generateSlug } from "@/features/forms/lib/form-utils"
 import { PublicFormRenderer } from "./public-form-renderer"
 import type { Form, FormQuestionWithOptions, FormSection, FormWithQuestions } from "@/types/database.types"
 
+type DraftForm = Omit<Form, 'id' | 'user_id'> & { id?: string; user_id?: string }
+
 interface FormPublishContentProps {
-  form: Form
+  form: Form | DraftForm
   isDraft?: boolean
   title?: string
   description?: string
@@ -116,8 +118,8 @@ export function FormPublishContent({
       setStatus(newStatus)
       toast.success(
         newStatus === "published"
-          ? "Formulaire publié avec succès"
-          : "Formulaire mis en brouillon"
+          ? "Formulaire publié avec succès ! Vous pouvez maintenant générer le code QR et partager l'URL."
+          : "Formulaire enregistré en brouillon"
       )
       router.refresh()
     } catch (error) {
@@ -192,9 +194,9 @@ export function FormPublishContent({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold mb-2">Publier et partager</h2>
+        <h2 className="text-xl font-bold mb-2">Aperçu et publication</h2>
         <p className="text-sm text-muted-foreground">
-          Gérez la publication de votre formulaire et générez un code QR pour le partager
+          Prévisualisez votre formulaire et publiez-le pour obtenir l'URL et le code QR. Si vous ne publiez pas, le formulaire sera enregistré en brouillon.
         </p>
       </div>
 
@@ -222,19 +224,31 @@ export function FormPublishContent({
               </Badge>
             </div>
 
-            <Select
-              value={status}
-              onValueChange={(value: "draft" | "published") => handleStatusChange(value)}
-              disabled={isSavingStatus || isSaving}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="draft">Brouillon</SelectItem>
-                <SelectItem value="published">Publié</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="space-y-2">
+              <Select
+                value={status}
+                onValueChange={(value: "draft" | "published") => handleStatusChange(value)}
+                disabled={isSavingStatus || isSaving}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="draft">Brouillon</SelectItem>
+                  <SelectItem value="published">Publié</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="p-3 rounded-lg bg-muted/50 border">
+                <p className="text-sm font-medium mb-1">
+                  {status === "draft" ? "Formulaire en brouillon" : "Formulaire publié"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {status === "draft" 
+                    ? "Votre formulaire est enregistré en brouillon et n'est pas accessible publiquement. Vous pouvez le publier à tout moment pour le rendre accessible via l'URL et le code QR."
+                    : "Votre formulaire est publié et accessible publiquement. Vous pouvez générer le code QR et partager l'URL avec vos utilisateurs."}
+                </p>
+              </div>
+            </div>
 
             <Separator />
 
@@ -341,9 +355,9 @@ export function FormPublishContent({
         </Card>
       </div>
 
-      {/* Preview Section */}
-      {previewForm && previewForm.questions.length > 0 && (
-        <Card className="lg:col-span-2">
+      {/* Preview Section - Show prominently at the top */}
+      {previewForm && (previewForm.questions.length > 0 || form.id) && (
+        <Card>
           <CardHeader>
             <CardTitle>Aperçu du formulaire</CardTitle>
             <CardDescription>
@@ -355,6 +369,22 @@ export function FormPublishContent({
               <div className="p-4 sm:p-6 md:p-8">
                 <PublicFormRenderer form={previewForm} source="web" />
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {(!previewForm || (previewForm.questions.length === 0 && !form.id)) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Aperçu du formulaire</CardTitle>
+            <CardDescription>
+              L'aperçu sera disponible une fois le formulaire enregistré
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8 text-muted-foreground">
+              <p>Enregistrez d'abord votre formulaire pour voir l'aperçu</p>
             </div>
           </CardContent>
         </Card>

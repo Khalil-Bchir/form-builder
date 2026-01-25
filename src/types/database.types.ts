@@ -462,7 +462,7 @@ export type FormWithQuestions = Form & {
 }
 
 // Enum/Union types (matching database constraints)
-export type QuestionType = "single_choice" | "multiple_choice" | "short_text" | "long_text"
+export type QuestionType = "single_choice" | "multiple_choice" | "short_text" | "long_text" | "rating"
 export type FormStatus = "draft" | "published"
 export type FormTheme = "light" | "dark" | "auto"
 export type FormLayout = "centered" | "wide" | "full"

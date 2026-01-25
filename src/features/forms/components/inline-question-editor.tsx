@@ -70,12 +70,20 @@ export function InlineQuestionEditor({
       return
     }
 
+    // For rating type, store max stars in options as a single-element array
+    let finalOptions: string[] | null = null
+    if (type === "rating") {
+      finalOptions = options.length > 0 && options[0] ? [options[0]] : ["5"]
+    } else if (type === "single_choice" || type === "multiple_choice") {
+      finalOptions = options
+    }
+
     onUpdate({
       order: question.order,
       type,
       text: text.trim(),
       required: required ?? false,
-      options: type === "single_choice" || type === "multiple_choice" ? options : undefined,
+      options: finalOptions,
       section_id: question.section_id ?? null,
     })
     setIsEditing(false)
@@ -133,7 +141,12 @@ export function InlineQuestionEditor({
                 value={type}
                 onValueChange={(value) => {
                   setType(value as QuestionType)
-                  if (value !== "single_choice" && value !== "multiple_choice") {
+                  if (value === "rating") {
+                    // Initialize with default 5 stars if not set
+                    if (options.length === 0 || !options[0] || isNaN(parseInt(options[0]))) {
+                      setOptions(["5"])
+                    }
+                  } else if (value !== "single_choice" && value !== "multiple_choice") {
                     setOptions([])
                   }
                 }}
@@ -154,6 +167,9 @@ export function InlineQuestionEditor({
                   <SelectItem value="multiple_choice">
                     {getQuestionTypeEmoji("multiple_choice")} {getQuestionTypeLabel("multiple_choice")}
                   </SelectItem>
+                  <SelectItem value="rating">
+                    {getQuestionTypeEmoji("rating")} {getQuestionTypeLabel("rating")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
 
@@ -168,6 +184,27 @@ export function InlineQuestionEditor({
                 </Label>
               </div>
             </div>
+
+            {type === "rating" && (
+              <div className="space-y-2 border-t pt-4">
+                <Label className="text-sm font-medium">Nombre d'étoiles maximum</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={options[0] ? parseInt(options[0]) || 5 : 5}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 5
+                    const clampedValue = Math.max(1, Math.min(10, value))
+                    setOptions([clampedValue.toString()])
+                  }}
+                  className="h-9 w-24"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Entre 1 et 10 étoiles
+                </p>
+              </div>
+            )}
 
             {needsOptions && (
               <div className="space-y-2 border-t pt-4">

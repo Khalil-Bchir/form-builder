@@ -5,8 +5,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
+import { StarRating } from "@/components/ui/star-rating"
 import type { FormQuestionWithOptions } from "@/types/database.types"
-import { getQuestionTypeEmoji } from "../lib/form-utils"
 import { cn } from "@/lib/utils"
 
 interface QuestionPreviewProps {
@@ -88,6 +88,19 @@ export function QuestionPreview({ question, index }: QuestionPreviewProps) {
           />
         )
 
+      case "rating":
+        const maxStars = question.options && question.options[0] ? parseInt(question.options[0]) || 5 : 5
+        return (
+          <div className="py-2">
+            <StarRating
+              value={0}
+              maxStars={maxStars}
+              disabled
+              size="lg"
+            />
+          </div>
+        )
+
       default:
         return null
     }
@@ -98,7 +111,9 @@ export function QuestionPreview({ question, index }: QuestionPreviewProps) {
       className="space-y-3 py-4 sm:py-6 border-b border-border last:border-b-0"
     >
       <Label className="text-base sm:text-lg md:text-xl font-semibold flex items-center gap-2 sm:gap-2.5 flex-wrap text-foreground">
-        <span className="text-base sm:text-lg md:text-xl">{getQuestionTypeEmoji(question.type)}</span>
+        <span className="text-base sm:text-lg md:text-xl font-bold text-primary">
+          {index + 1}.
+        </span>
         <span className="break-words">
           {question.text}
           {question.required && (

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { CheckCircle2, Loader2, Mail, Phone, Globe, Building2, ChevronLeft, ChevronRight, Check } from "lucide-react"
+import { StarRating } from "@/components/ui/star-rating"
 import {
   RadioGroup,
   RadioGroupItem,
@@ -12,8 +13,21 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import type { FormWithQuestions, FormSection } from "@/types/database.types"
-import { getQuestionTypeEmoji } from "../lib/form-utils"
 import { cn } from "@/lib/utils"
+
+// Helper function to convert number to Roman numeral
+function toRomanNumeral(num: number): string {
+  const values = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
+  const numerals = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"]
+  let result = ""
+  for (let i = 0; i < values.length; i++) {
+    while (num >= values[i]) {
+      result += numerals[i]
+      num -= values[i]
+    }
+  }
+  return result
+}
 
 interface PublicFormRendererProps {
   form: FormWithQuestions
@@ -97,6 +111,8 @@ export function PublicFormRenderer({
     defaultValues: form.questions.reduce((acc, q) => {
       if (q.type === "multiple_choice") {
         acc[q.id!] = []
+      } else if (q.type === "rating") {
+        acc[q.id!] = "0" // Rating starts at 0 (no stars selected)
       } else {
         acc[q.id!] = ""
       }
@@ -109,6 +125,9 @@ export function PublicFormRenderer({
   const totalQuestions = form.questions.length
   const answeredQuestions = form.questions.filter((q) => {
     const value = formValues[q.id!]
+    if (q.type === "rating") {
+      return value && value !== "0" && value !== ""
+    }
     return value && (Array.isArray(value) ? value.length > 0 : value !== "")
   }).length
   const progress = totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0
@@ -119,7 +138,12 @@ export function PublicFormRenderer({
     for (const question of currentSectionQuestions) {
       if (question.required) {
         const value = currentValues[question.id!]
-        if (!value || (Array.isArray(value) && value.length === 0)) {
+        if (question.type === "rating") {
+          if (!value || value === "0" || value === "") {
+            setError(`Veuillez répondre à la question obligatoire : ${question.text}`)
+            return false
+          }
+        } else if (!value || (Array.isArray(value) && value.length === 0)) {
           setError(`Veuillez répondre à la question obligatoire : ${question.text}`)
           return false
         }
@@ -472,7 +496,7 @@ export function PublicFormRenderer({
                       {isCompleted ? (
                         <Check className="w-4 h-4 lg:w-5 lg:h-5" />
                       ) : (
-                        index + 1
+                        <span className="text-xs lg:text-sm">{toRomanNumeral(index + 1)}</span>
                       )}
                     </div>
                     
@@ -552,7 +576,7 @@ export function PublicFormRenderer({
                             {isCompleted ? (
                               <Check className="w-4 h-4 sm:w-5 sm:h-5" />
                             ) : (
-                              index + 1
+                              <span className="text-xs sm:text-sm">{toRomanNumeral(index + 1)}</span>
                             )}
                           </div>
                         </div>
@@ -560,7 +584,7 @@ export function PublicFormRenderer({
                     })}
                   </div>
                   <p className="text-xs sm:text-sm text-muted-foreground text-center">
-                    Étape {currentSectionIndex + 1} sur {totalSections}
+                    Étape {toRomanNumeral(currentSectionIndex + 1)} sur {toRomanNumeral(totalSections)}
                   </p>
                 </div>
               )}
@@ -585,7 +609,9 @@ export function PublicFormRenderer({
               {/* Section header */}
               {currentSection && (
                 <div className="space-y-2 pb-4 sm:pb-6 border-b border-border">
-                  <h2 className="text-xl sm:text-2xl font-semibold">{currentSection.title}</h2>
+                  <h2 className="text-xl sm:text-2xl font-semibold">
+                    {toRomanNumeral(currentSectionIndex + 1)}. {currentSection.title}
+                  </h2>
                   {currentSection.description && (
                     <p className="text-muted-foreground text-sm sm:text-base">
                       {currentSection.description}
@@ -600,20 +626,25 @@ export function PublicFormRenderer({
                   <p>Aucune question dans cette section</p>
                 </div>
               ) : (
-                currentSectionQuestions.map((question, index) => (
-                <div 
-                  key={question.id} 
-                  className="space-y-3 py-4 sm:py-6 border-b border-border last:border-b-0"
-                >
-                    <Label className="text-base sm:text-lg md:text-xl font-semibold flex items-center gap-2 sm:gap-2.5 flex-wrap text-foreground">
-                    <span className="text-base sm:text-lg md:text-xl">{getQuestionTypeEmoji(question.type)}</span>
-                    <span className="break-words">
-                      {question.text}
-                      {question.required && (
-                        <span className="text-destructive ml-1">*</span>
-                      )}
-                    </span>
-                  </Label>
+                currentSectionQuestions.map((question, index) => {
+                  // Calculate question number: sequential within the section (1, 2, 3...)
+                  const questionNumber = index + 1
+                  return (
+                  <div 
+                    key={question.id} 
+                    className="space-y-3 py-4 sm:py-6 border-b border-border last:border-b-0"
+                  >
+                      <Label className="text-base sm:text-lg md:text-xl font-semibold flex items-center gap-2 sm:gap-2.5 flex-wrap text-foreground">
+                        <span className="text-base sm:text-lg md:text-xl font-bold text-primary">
+                          {questionNumber}.
+                        </span>
+                        <span className="break-words">
+                          {question.text}
+                          {question.required && (
+                            <span className="text-destructive ml-1">*</span>
+                          )}
+                        </span>
+                      </Label>
 
                   {question.type === "single_choice" && (
                     <RadioGroup
@@ -722,8 +753,23 @@ export function PublicFormRenderer({
                       className="text-sm sm:text-base resize-none"
                     />
                   )}
+
+                  {question.type === "rating" && (
+                    <div className="py-2">
+                      <StarRating
+                        value={formValues[question.id!] ? parseInt(formValues[question.id!]) || 0 : 0}
+                        maxStars={question.options && question.options[0] ? parseInt(question.options[0]) || 5 : 5}
+                        onChange={(value) => {
+                          formHook.setValue(question.id!, value.toString(), { shouldValidate: false })
+                        }}
+                        size="lg"
+                        color={formColor}
+                      />
+                    </div>
+                  )}
                 </div>
-                ))
+                  )
+                })
               )}
 
             </form>

@@ -44,6 +44,7 @@ export default async function EditFormPage({ params }: EditFormPageProps) {
   const { data: fullForm } = await getForm(id)
 
   async function handleSave(data: {
+    formId?: string
     title: string
     description?: string
     questions: Array<{
@@ -71,12 +72,13 @@ export default async function EditFormPage({ params }: EditFormPageProps) {
       throw new Error("Unauthorized")
     }
 
-    // Update form
-    const slug = generateSlug(data.title)
+    // Update form - DO NOT update slug automatically
+    // The slug is used for the public URL (/f/{slug}) and should only be changed
+    // manually by the user in the form settings to avoid breaking existing links/QR codes
     const { error: formError } = await updateForm(id, {
       title: data.title,
       description: data.description,
-      slug,
+      // Slug is NOT updated here - it should only be changed in FormSettings
     })
 
     if (formError) {

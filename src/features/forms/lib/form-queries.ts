@@ -175,9 +175,16 @@ export async function updateForm(
   }
 ) {
   const supabase = await createClient()
+  
+  // Remove slug from update if it's empty or undefined to prevent errors
+  const cleanFormData = { ...formData }
+  if (cleanFormData.slug === "" || cleanFormData.slug === undefined) {
+    delete cleanFormData.slug
+  }
+  
   const { data, error } = await supabase
     .from("forms")
-    .update(formData)
+    .update(cleanFormData)
     .eq("id", formId)
     .select()
     .single()

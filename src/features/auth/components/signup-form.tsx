@@ -48,6 +48,8 @@ export function SignupForm({
   const router = useRouter()
   const supabase = createClient()
 
+  const emailRedirectToOrigin = process.env.NEXT_PUBLIC_ORIGIN
+
   const form = useForm<SignupFormValues>({
     resolver: standardSchemaResolver(signupSchema),
     defaultValues: {
@@ -64,7 +66,7 @@ export function SignupForm({
         email: data.email,
         password: data.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+          emailRedirectTo: `${emailRedirectToOrigin}/auth/callback?next=/dashboard`,
         },
       })
 

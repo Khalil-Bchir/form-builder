@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useImperativeHandle, forwardRef, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Save, Download, QrCode, Eye, Palette, Layout, Type, Sparkles, Building2, Mail, Phone, Globe, Image, Upload, X, Loader2, Check } from "lucide-react"
 import Color from "color"
@@ -44,9 +44,18 @@ import { createClient } from "@/lib/supabase/client"
 import type { Form, FormTheme, FormLayout, FormFontFamily, ButtonStyle } from "@/types/database.types"
 import { generateSlug } from "../lib/form-utils"
 
+type DraftForm = Omit<Form, 'id' | 'user_id'> & { id?: string; user_id?: string }
+
 interface FormSettingsProps {
-  form: Form
+  form: Form | DraftForm
   onUpdate: () => void
+  hideSaveButton?: boolean
+  onSaveFromParent?: () => Promise<void>
+  hidePublicationSection?: boolean
+}
+
+export interface FormSettingsRef {
+  savePersonalization: () => Promise<boolean>
 }
 
 const THEME_PRESETS = [
@@ -60,55 +69,118 @@ const THEME_PRESETS = [
   { name: "Teal", value: "#14b8a6" },
 ]
 
-export function FormSettings({ form, onUpdate }: FormSettingsProps) {
+export const FormSettings = forwardRef<FormSettingsRef, FormSettingsProps>(({ form, onUpdate, hideSaveButton = false, onSaveFromParent, hidePublicationSection = false }, ref) => {
   const router = useRouter()
   const supabase = createClient()
   const brandBucket = process.env.NEXT_PUBLIC_STORAGE_BRAND_BUCKET || "brand"
-  const [title, setTitle] = useState(form.title)
-  const [description, setDescription] = useState(form.description || "")
-  const [slug, setSlug] = useState(form.slug)
-  const [status, setStatus] = useState(form.status)
-  const [color, setColor] = useState(form.color || "#3b82f6")
-  const [theme, setTheme] = useState<FormTheme>((form.theme as FormTheme) || "light")
-  const [layout, setLayout] = useState<FormLayout>((form.layout as FormLayout) || "centered")
-  const [fontFamily, setFontFamily] = useState<FormFontFamily>((form.font_family as FormFontFamily) || "inter")
-  const [backgroundColor, setBackgroundColor] = useState(form.background_color || "#ffffff")
-  const [buttonStyle, setButtonStyle] = useState<ButtonStyle>((form.button_style as ButtonStyle) || "default")
-  const [buttonColor, setButtonColor] = useState(form.button_color || form.color || "#3b82f6")
-  const [showProgress, setShowProgress] = useState(form.show_progress !== false)
-  const [companyName, setCompanyName] = useState(form.company_name || "")
-  const [companyLogoUrl, setCompanyLogoUrl] = useState(form.company_logo_url || "")
-  const [contactEmail, setContactEmail] = useState(form.contact_email || "")
-  const [contactPhone, setContactPhone] = useState(form.contact_phone || "")
-  const [websiteUrl, setWebsiteUrl] = useState(form.website_url || "")
-  const [showBranding, setShowBranding] = useState(form.show_branding || false)
+  
+  // Initialize state only once on mount, then control updates via useEffect
+  const [title, setTitle] = useState(() => form.title)
+  const [description, setDescription] = useState(() => form.description || "")
+  const [slug, setSlug] = useState(() => form.slug)
+  const [status, setStatus] = useState(() => form.status)
+  const [color, setColor] = useState(() => form.color || "#3b82f6")
+  const [theme, setTheme] = useState<FormTheme>(() => (form.theme as FormTheme) || "light")
+  const [layout, setLayout] = useState<FormLayout>(() => (form.layout as FormLayout) || "centered")
+  const [fontFamily, setFontFamily] = useState<FormFontFamily>(() => (form.font_family as FormFontFamily) || "inter")
+  const [backgroundColor, setBackgroundColor] = useState(() => form.background_color || "#ffffff")
+  const [buttonStyle, setButtonStyle] = useState<ButtonStyle>(() => (form.button_style as ButtonStyle) || "default")
+  const [buttonColor, setButtonColor] = useState(() => form.button_color || form.color || "#3b82f6")
+  const [showProgress, setShowProgress] = useState(() => form.show_progress !== false)
+  const [companyName, setCompanyName] = useState(() => form.company_name || "")
+  const [companyLogoUrl, setCompanyLogoUrl] = useState(() => form.company_logo_url || "")
+  const [contactEmail, setContactEmail] = useState(() => form.contact_email || "")
+  const [contactPhone, setContactPhone] = useState(() => form.contact_phone || "")
+  const [websiteUrl, setWebsiteUrl] = useState(() => form.website_url || "")
+  const [showBranding, setShowBranding] = useState(() => form.show_branding || false)
   const [isSaving, setIsSaving] = useState(false)
   const [isGeneratingQR, setIsGeneratingQR] = useState(false)
   const [isUploadingLogo, setIsUploadingLogo] = useState(false)
   const [formUrl, setFormUrl] = useState("")
 
+  // Expose save function to parent via ref
+  useImperativeHandle(ref, () => ({
+    savePersonalization: async () => {
+      const isValidUUID = form.id && form.id.trim() !== "" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(form.id)
+      
+      if (!isValidUUID) {
+        // Form not saved yet, use parent's save function
+        if (onSaveFromParent) {
+          await onSaveFromParent()
+          return true
+        }
+        return false
+      }
+
+      // Save personalization settings
+      setIsSaving(true)
+      try {
+        const { error } = await supabase
+          .from("forms")
+          .update({
+            color,
+            theme,
+            layout,
+            font_family: fontFamily,
+            background_color: backgroundColor,
+            button_style: buttonStyle,
+            button_color: buttonColor,
+            show_progress: showProgress,
+            company_name: companyName.trim() || null,
+            company_logo_url: companyLogoUrl.trim() || null,
+            contact_email: contactEmail.trim() || null,
+            contact_phone: contactPhone.trim() || null,
+            website_url: websiteUrl.trim() || null,
+            show_branding: showBranding,
+          })
+          .eq("id", form.id)
+
+        if (error) throw error
+        await onUpdate()
+        return true
+      } catch (error) {
+        console.error("Failed to save personalization:", error)
+        return false
+      } finally {
+        setIsSaving(false)
+      }
+    }
+  }), [form.id, color, theme, layout, fontFamily, backgroundColor, buttonStyle, buttonColor, showProgress, companyName, companyLogoUrl, contactEmail, contactPhone, websiteUrl, showBranding, onSaveFromParent, onUpdate, supabase])
+
   // Only sync props to state when form.id changes (form prop might be recreated)
+  // Use ref to track previous form.id to prevent unnecessary updates
+  const prevFormIdRef = useRef<string | undefined>(form?.id)
+  
   useEffect(() => {
-    setTitle(form.title)
-    setDescription(form.description || "")
-    setSlug(form.slug)
-    setStatus(form.status)
-    setColor(form.color || "#3b82f6")
-    setTheme((form.theme as FormTheme) || "light")
-    setLayout((form.layout as FormLayout) || "centered")
-    setFontFamily((form.font_family as FormFontFamily) || "inter")
-    setBackgroundColor(form.background_color || "#ffffff")
-    setButtonStyle((form.button_style as ButtonStyle) || "default")
-    setButtonColor(form.button_color || form.color || "#3b82f6")
-    setShowProgress(form.show_progress !== false)
-    setCompanyName(form.company_name || "")
-    setCompanyLogoUrl(form.company_logo_url || "")
-    setContactEmail(form.contact_email || "")
-    setContactPhone(form.contact_phone || "")
-    setWebsiteUrl(form.website_url || "")
-    setShowBranding(form.show_branding || false)
+    const currentFormId = form?.id
+    
+    // Only update if form.id actually changed
+    if (currentFormId !== prevFormIdRef.current) {
+      prevFormIdRef.current = currentFormId
+      
+      // Sync all form props to state when form.id changes
+      setTitle(form.title)
+      setDescription(form.description || "")
+      setSlug(form.slug)
+      setStatus(form.status)
+      setColor(form.color || "#3b82f6")
+      setTheme((form.theme as FormTheme) || "light")
+      setLayout((form.layout as FormLayout) || "centered")
+      setFontFamily((form.font_family as FormFontFamily) || "inter")
+      setBackgroundColor(form.background_color || "#ffffff")
+      setButtonStyle((form.button_style as ButtonStyle) || "default")
+      setButtonColor(form.button_color || form.color || "#3b82f6")
+      setShowProgress(form.show_progress !== false)
+      setCompanyName(form.company_name || "")
+      setCompanyLogoUrl(form.company_logo_url || "")
+      setContactEmail(form.contact_email || "")
+      setContactPhone(form.contact_phone || "")
+      setWebsiteUrl(form.website_url || "")
+      setShowBranding(form.show_branding || false)
+    }
+    // Only depend on form.id, not the entire form object
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.id])
+  }, [form?.id])
 
   // Set form URL on client side only
   useEffect(() => {
@@ -119,6 +191,29 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
   const handleSave = async () => {
     if (!title.trim()) {
       toast.error("Le titre est requis")
+      return
+    }
+
+    // If form doesn't have a valid ID, use parent's save function
+    // Check if form.id is empty, null, undefined, or not a valid UUID format
+    const isValidUUID = form.id && form.id.trim() !== "" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(form.id)
+    
+    if (!isValidUUID) {
+      if (onSaveFromParent) {
+        setIsSaving(true)
+        try {
+          await onSaveFromParent()
+          toast.success("Formulaire enregistré avec succès")
+          // Refresh to get the new form ID, then update with customization settings
+          router.refresh()
+        } catch (error) {
+          toast.error("Échec de l'enregistrement du formulaire")
+        } finally {
+          setIsSaving(false)
+        }
+      } else {
+        toast.error("Le formulaire doit être enregistré avant de modifier les paramètres. Veuillez d'abord compléter l'étape 1.")
+      }
       return
     }
 
@@ -321,15 +416,17 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
             Configurez les détails de votre formulaire et les options de publication
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:flex-shrink-0">
-          <Button variant="outline" onClick={() => router.back()} className="w-full sm:w-auto">
-            Annuler
-          </Button>
-          <Button onClick={handleSave} disabled={isSaving} className="w-full sm:w-auto">
-            <Save className="size-4 mr-2" />
-            {isSaving ? "Enregistrement..." : "Enregistrer les modifications"}
-          </Button>
-        </div>
+        {!hideSaveButton && (
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:flex-shrink-0">
+            <Button variant="outline" onClick={() => router.back()} className="w-full sm:w-auto">
+              Annuler
+            </Button>
+            <Button onClick={handleSave} disabled={isSaving} className="w-full sm:w-auto">
+              <Save className="size-4 mr-2" />
+              {isSaving ? "Enregistrement..." : "Enregistrer les modifications"}
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="grid gap-4 sm:gap-5 md:gap-6 lg:grid-cols-2 w-full min-w-0 max-w-full">
@@ -601,90 +698,92 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
 
         {/* Right Column */}
         <div className="space-y-4 sm:space-y-5 md:space-y-6 min-w-0 max-w-full">
-          <Card className="min-w-0 max-w-full overflow-x-hidden">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Layout className="size-4 flex-shrink-0" />
-                Publication
-              </CardTitle>
-              <CardDescription>
-                Contrôler la visibilité du formulaire
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="status">Statut</Label>
-                  <p className="text-sm text-muted-foreground">
-                    {status === "published"
-                      ? "Le formulaire est en ligne et accessible"
-                      : "Le formulaire est en mode brouillon"}
-                  </p>
+          {!hidePublicationSection && (
+            <Card className="min-w-0 max-w-full overflow-x-hidden">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Layout className="size-4 flex-shrink-0" />
+                  Publication
+                </CardTitle>
+                <CardDescription>
+                  Contrôler la visibilité du formulaire
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="status">Statut</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {status === "published"
+                        ? "Le formulaire est en ligne et accessible"
+                        : "Le formulaire est en mode brouillon"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant={status === "published" ? "default" : "secondary"}
+                    >
+                      {status}
+                    </Badge>
+                    <Switch
+                      id="status"
+                      checked={status === "published"}
+                      onCheckedChange={(checked) =>
+                        setStatus(checked ? "published" : "draft")
+                      }
+                    />
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant={status === "published" ? "default" : "secondary"}
-                  >
-                    {status}
-                  </Badge>
-                  <Switch
-                    id="status"
-                    checked={status === "published"}
-                    onCheckedChange={(checked) =>
-                      setStatus(checked ? "published" : "draft")
-                    }
-                  />
-                </div>
-              </div>
 
-              {(status === "published" || form.status === "published") && (
-                <>
-                  <Separator />
-                  <div className="space-y-2">
-                    <Label>Partager le formulaire</Label>
+                {(status === "published" || form.status === "published") && (
+                  <>
+                    <Separator />
                     <div className="space-y-2">
-                      <div className="flex gap-2 min-w-0">
-                        <Input value={formUrl} readOnly className="text-xs min-w-0 flex-1" />
+                      <Label>Partager le formulaire</Label>
+                      <div className="space-y-2">
+                        <div className="flex gap-2 min-w-0">
+                          <Input value={formUrl} readOnly className="text-xs min-w-0 flex-1" />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              navigator.clipboard.writeText(formUrl)
+                              toast.success("Lien copié dans le presse-papiers")
+                            }}
+                            className="flex-shrink-0"
+                          >
+                            Copier
+                          </Button>
+                        </div>
                         <Button
                           type="button"
                           variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            navigator.clipboard.writeText(formUrl)
-                            toast.success("Lien copié dans le presse-papiers")
-                          }}
-                          className="flex-shrink-0"
+                          className="w-full"
+                          onClick={handleDownloadQR}
+                          disabled={isGeneratingQR}
                         >
-                          Copier
+                          <QrCode className="size-4 mr-2" />
+                          {isGeneratingQR ? "Génération..." : "Télécharger le code QR"}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full"
+                          asChild
+                        >
+                          <a href={formUrl} target="_blank" rel="noopener noreferrer">
+                            <Eye className="size-4 mr-2" />
+                            Aperçu du formulaire
+                          </a>
                         </Button>
                       </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full"
-                        onClick={handleDownloadQR}
-                        disabled={isGeneratingQR}
-                      >
-                        <QrCode className="size-4 mr-2" />
-                        {isGeneratingQR ? "Génération..." : "Télécharger le code QR"}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full"
-                        asChild
-                      >
-                        <a href={formUrl} target="_blank" rel="noopener noreferrer">
-                          <Eye className="size-4 mr-2" />
-                          Aperçu du formulaire
-                        </a>
-                      </Button>
                     </div>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           <Card className="min-w-0 max-w-full overflow-x-hidden">
             <CardHeader>
@@ -971,4 +1070,6 @@ export function FormSettings({ form, onUpdate }: FormSettingsProps) {
       </div>
     </div>
   )
-}
+})
+
+FormSettings.displayName = "FormSettings"

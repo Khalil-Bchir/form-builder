@@ -19,6 +19,7 @@ export function getQuestionTypeLabel(type: string): string {
     multiple_choice: "Choix multiple",
     short_text: "Texte court",
     long_text: "Texte long",
+    rating: "Note (étoiles)",
   }
   return labels[type] || type
 }
@@ -29,6 +30,7 @@ export function getQuestionTypeEmoji(type: string): string {
     multiple_choice: "☑️",
     short_text: "📝",
     long_text: "📄",
+    rating: "⭐",
   }
   return emojis[type] || "❓"
 }

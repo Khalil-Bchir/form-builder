@@ -49,6 +49,15 @@ export function QuestionEditor({
     question?.options || []
   )
   const [newOption, setNewOption] = useState("")
+  
+  // For rating type, store max stars in options as ["5"] by default
+  const getMaxStars = () => {
+    if (type === "rating") {
+      return options[0] ? parseInt(options[0]) || 5 : 5
+    }
+    return 5
+  }
+  const [maxStars, setMaxStars] = useState(getMaxStars())
 
   const handleAddOption = () => {
     if (newOption.trim() && !options.includes(newOption.trim())) {
@@ -70,12 +79,20 @@ export function QuestionEditor({
       return
     }
 
+    // For rating type, store max stars in options as a single-element array
+    let finalOptions: string[] | null = null
+    if (type === "rating") {
+      finalOptions = [maxStars.toString()]
+    } else if (type === "single_choice" || type === "multiple_choice") {
+      finalOptions = options
+    }
+
     onSave({
       order: question?.order || 0,
       type,
       text: text.trim(),
       required: required ?? false,
-      options: type === "single_choice" || type === "multiple_choice" ? options : undefined,
+      options: finalOptions,
       section_id: question?.section_id ?? null,
     })
 
@@ -117,7 +134,20 @@ export function QuestionEditor({
             <Label htmlFor="type">Type de question</Label>
             <Select
               value={type}
-              onValueChange={(value) => setType(value as QuestionType)}
+              onValueChange={(value) => {
+                setType(value as QuestionType)
+                // For rating type, initialize with default max stars
+                if (value === "rating") {
+                  if (options.length === 0 || !options[0] || isNaN(parseInt(options[0]))) {
+                    setOptions(["5"])
+                    setMaxStars(5)
+                  } else {
+                    setMaxStars(parseInt(options[0]))
+                  }
+                } else if (value !== "single_choice" && value !== "multiple_choice") {
+                  setOptions([])
+                }
+              }}
             >
               <SelectTrigger id="type">
                 <SelectValue />
@@ -135,6 +165,9 @@ export function QuestionEditor({
                 <SelectItem value="multiple_choice">
                   {getQuestionTypeEmoji("multiple_choice")} Choix multiple
                 </SelectItem>
+                <SelectItem value="rating">
+                  {getQuestionTypeEmoji("rating")} Note (étoiles)
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -149,6 +182,28 @@ export function QuestionEditor({
               rows={2}
             />
           </div>
+
+          {type === "rating" && (
+            <div className="space-y-2">
+              <Label htmlFor="maxStars">Nombre d'étoiles maximum</Label>
+              <Input
+                id="maxStars"
+                type="number"
+                min="1"
+                max="10"
+                value={maxStars}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || 5
+                  const clampedValue = Math.max(1, Math.min(10, value))
+                  setMaxStars(clampedValue)
+                  setOptions([clampedValue.toString()])
+                }}
+              />
+              <p className="text-sm text-muted-foreground">
+                Choisissez le nombre d'étoiles (entre 1 et 10)
+              </p>
+            </div>
+          )}
 
           {needsOptions && (
             <div className="space-y-2">

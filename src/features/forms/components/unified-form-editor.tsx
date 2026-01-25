@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { ChevronLeft, ChevronRight, FileQuestion, Palette, QrCode } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { StepIndicator } from "./step-indicator"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { FormBuilderContent } from "./form-builder-content"
 import { FormCustomizationContent } from "./form-customization-content"
 import { FormPublishContent } from "./form-publish-content"
@@ -22,6 +22,7 @@ interface UnifiedFormEditorProps {
   initialQuestions?: FormQuestionWithOptions[]
   initialSections?: FormSection[]
   onSave: (data: {
+    formId?: string
     title: string
     description?: string
     questions: Omit<FormQuestionWithOptions, "id" | "form_id" | "created_at">[]
@@ -29,10 +30,10 @@ interface UnifiedFormEditorProps {
   }) => Promise<void>
 }
 
-const STEPS = [
-  { number: 1, title: "Données du formulaire", description: "Questions et sections" },
-  { number: 2, title: "Personnalisation", description: "Style et apparence" },
-  { number: 3, title: "Publication", description: "Publier et partager" },
+const TABS = [
+  { value: "1", label: "Création", description: "Titre, description et questions" },
+  { value: "2", label: "Personnalisation", description: "Style et apparence" },
+  { value: "3", label: "Aperçu", description: "Prévisualiser et publier" },
 ]
 
 export function UnifiedFormEditor({
@@ -45,7 +46,7 @@ export function UnifiedFormEditor({
   onSave,
 }: UnifiedFormEditorProps) {
   const router = useRouter()
-  const [currentStep, setCurrentStep] = useState(1) // Always start at step 1 for new forms
+  const [activeTab, setActiveTab] = useState("1") // Always start at tab 1 for new forms
   const [title, setTitle] = useState(initialTitle)
   const [description, setDescription] = useState(initialDescription)
   const [questions, setQuestions] = useState<FormQuestionWithOptions[]>(initialQuestions)
@@ -53,26 +54,26 @@ export function UnifiedFormEditor({
   const [isSaving, setIsSaving] = useState(false)
   const [currentFormId, setCurrentFormId] = useState(formId)
   const [currentForm, setCurrentForm] = useState(form)
-  const [completedSteps, setCompletedSteps] = useState<number[]>(formId ? [1] : [])
+  const [savePersonalizationFn, setSavePersonalizationFn] = useState<(() => Promise<boolean>) | null>(null)
+  
+  // Determine if we're editing an existing form
+  const isEditingExistingForm = !!formId && !!form?.id
 
-  // Update form state when props change (after save/refresh)
+  // Update when formId changes
   useEffect(() => {
     if (formId && formId !== currentFormId) {
       setCurrentFormId(formId)
-      setCompletedSteps([1])
-      // Auto-advance to step 2 after saving step 1
-      if (currentStep === 1) {
-        setCurrentStep(2)
-      }
     }
-    if (form) {
+  }, [formId, currentFormId])
+
+  // Update form object when it changes - use ref to prevent unnecessary updates
+  const prevFormIdRef = useRef<string | undefined>(form?.id)
+  useEffect(() => {
+    if (form?.id && form.id !== prevFormIdRef.current) {
+      prevFormIdRef.current = form.id
       setCurrentForm(form)
-      // If form exists, mark step 1 as completed
-      if (form.id && !completedSteps.includes(1)) {
-        setCompletedSteps([1])
-      }
     }
-  }, [formId, form, currentFormId, currentStep, completedSteps])
+  }, [form?.id])
 
   const handleSave = async (): Promise<boolean> => {
     if (!title.trim()) {
@@ -82,24 +83,58 @@ export function UnifiedFormEditor({
 
     setIsSaving(true)
     try {
+      // Clean up questions data - remove undefined options and other unnecessary fields
+      const cleanedQuestions = questions.map((q, index) => {
+        // Handle options - ensure it's a valid array or null
+        let optionsValue: string[] | null = null
+        if (q.type === "single_choice" || q.type === "multiple_choice") {
+          // For choice questions, only include options if they're a valid array
+          if (q.options && Array.isArray(q.options) && q.options.length > 0) {
+            optionsValue = q.options
+          } else {
+            optionsValue = null
+          }
+        }
+
+        // Handle section_id - only include if it's a valid UUID (not temp- or empty)
+        let sectionIdValue: string | null = null
+        if (q.section_id && 
+            q.section_id !== "" && 
+            !q.section_id.startsWith("temp-") &&
+            !q.section_id.startsWith("order-")) {
+          sectionIdValue = q.section_id
+        }
+
+        return {
+          order: index,
+          type: q.type,
+          text: q.text,
+          required: q.required ?? false,
+          options: optionsValue,
+          section_id: sectionIdValue,
+        }
+      })
+
+      // Clean up sections data
+      const cleanedSections = sections.map((s, index) => ({
+        title: s.title,
+        description: s.description ?? null,
+        order: index,
+      }))
+
       await onSave({
+        formId: currentFormId || undefined,
         title: title.trim(),
         description: description.trim() || undefined,
-        questions: questions.map((q, index) => ({
-          ...q,
-          order: index,
-        })),
-        sections: sections.map((s, index) => ({
-          title: s.title,
-          description: s.description ?? null,
-          order: index,
-        })),
+        questions: cleanedQuestions,
+        sections: cleanedSections,
       })
       toast.success("Formulaire enregistré avec succès")
-      // Refresh to get the new form ID
+      // Refresh to get the new form ID and data
       router.refresh()
       return true
     } catch (error) {
+      console.error("Save error:", error)
       toast.error("Échec de l'enregistrement du formulaire")
       return false
     } finally {
@@ -107,63 +142,56 @@ export function UnifiedFormEditor({
     }
   }
 
-  const handleNext = async () => {
-    if (currentStep === 1) {
-      // Step 1: Save form as draft before proceeding
-      const saved = await handleSave()
-      if (saved) {
-        setCompletedSteps([1])
-        setCurrentStep(2)
+  const handleTabChange = async (value: string) => {
+    // When switching to tab 2 or 3, ensure form is saved first (for new forms)
+    if (!isEditingExistingForm && value !== "1" && !currentFormId) {
+      if (!title.trim()) {
+        toast.error("Veuillez d'abord ajouter un titre au formulaire")
+        return
       }
-    } else if (currentStep === 2) {
-      // Step 2: Move to step 3
-      setCompletedSteps([1, 2])
-      setCurrentStep(3)
+      const saved = await handleSave()
+      if (!saved) {
+        return
+      }
     }
+    setActiveTab(value)
   }
 
-  const handlePrevious = () => {
-    if (currentStep === 2) {
-      setCurrentStep(1)
-    } else if (currentStep === 3) {
-      setCurrentStep(2)
+  // Create a stable draft form object for customization and publishing steps
+  // Use useMemo with proper dependencies to prevent unnecessary recreations
+  type DraftForm = Omit<Form, 'id' | 'user_id'> & { id?: string; user_id?: string }
+  
+  // Memoize draftForm to prevent infinite loops - only recreate when form ID or essential data changes
+  const draftForm: Form | DraftForm | null = useMemo(() => {
+    if (currentForm) {
+      return currentForm
     }
-  }
-
-  const canProceedToNextStep = () => {
-    if (currentStep === 1) {
-      // Step 1 requires title
-      return title.trim().length > 0
-    }
-    // Steps 2 and 3 can always proceed (form is already saved)
-    return true
-  }
-
-  // Create a draft form object for customization and publishing steps
-  const draftForm: Form | null = currentForm || (currentFormId ? null : {
-    id: "",
-    title: title || "Nouveau formulaire",
-    description: description || null,
-    slug: title ? generateSlug(title) : "nouveau-formulaire",
-    status: "draft" as const,
-    user_id: "",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    color: null,
-    theme: null,
-    layout: null,
-    font_family: null,
-    background_color: null,
-    button_style: null,
-    button_color: null,
-    show_progress: null,
-    company_name: null,
-    company_logo_url: null,
-    contact_email: null,
-    contact_phone: null,
-    website_url: null,
-    show_branding: null,
-  } as Form)
+    
+    if (currentFormId) return null
+    
+    return {
+      title: title || "Nouveau formulaire",
+      description: description || null,
+      slug: title ? generateSlug(title) : "nouveau-formulaire",
+      status: "draft" as const,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      color: null,
+      theme: null,
+      layout: null,
+      font_family: null,
+      background_color: null,
+      button_style: null,
+      button_color: null,
+      show_progress: null,
+      company_name: null,
+      company_logo_url: null,
+      contact_email: null,
+      contact_phone: null,
+      website_url: null,
+      show_branding: null,
+    } as DraftForm
+  }, [currentForm?.id, currentFormId, title, description]) // Only depend on form.id, not the whole object
 
   return (
     <div className="space-y-6">
@@ -176,97 +204,93 @@ export function UnifiedFormEditor({
             {formId ? "Gérez votre formulaire" : "Suivez les étapes pour créer votre formulaire"}
           </p>
         </div>
-
-        {/* Step Indicator */}
-        {/* <div className="flex-shrink-0">
-          <StepIndicator
-            steps={STEPS}
-            currentStep={currentStep}
-            completedSteps={completedSteps}
-          />
-        </div> */}
       </div>
 
       <Separator />
 
-      {/* Step Content */}
-      <div className="min-h-[400px]">
-        {currentStep === 1 && (
-          <Card>
-            <FormBuilderContent
-              formId={currentFormId}
-              title={title}
-              description={description}
-              questions={questions}
-              sections={sections}
-              onTitleChange={setTitle}
-              onDescriptionChange={setDescription}
-              onQuestionsChange={setQuestions}
-              onSectionsChange={setSections}
-            />
-          </Card>
-        )}
+      {/* Tabs Navigation */}
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          {TABS.map((tab) => (
+            <TabsTrigger key={tab.value} value={tab.value}>
+              {tab.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
-        {currentStep === 2 && draftForm && (
-          <FormCustomizationContent
-            form={draftForm}
-            isDraft={!currentFormId}
-            title={title}
-            onSave={async () => {
-              await handleSave()
-            }}
-            isSaving={isSaving}
-          />
-        )}
+        {/* Tab Content */}
+        <div className="mt-6 min-h-[400px]">
+          <TabsContent value="1" className="mt-0">
+            <Card>
+              <FormBuilderContent
+                formId={currentFormId}
+                title={title}
+                description={description}
+                questions={questions}
+                sections={sections}
+                onTitleChange={setTitle}
+                onDescriptionChange={setDescription}
+                onQuestionsChange={setQuestions}
+                onSectionsChange={setSections}
+              />
+            </Card>
+          </TabsContent>
 
-        {currentStep === 3 && draftForm && (
-          <FormPublishContent
-            form={draftForm}
-            isDraft={!currentFormId}
-            title={title}
-            description={description}
-            questions={questions}
-            sections={sections}
-            onSave={async () => {
-              await handleSave()
-            }}
-            isSaving={isSaving}
-          />
-        )}
-      </div>
+          <TabsContent value="2" className="mt-0">
+            {draftForm && (
+              <FormCustomizationContent
+                key={currentForm?.id || "draft"} // Key to force remount when form changes
+                form={draftForm as Form | DraftForm}
+                isDraft={!currentFormId}
+                title={title}
+                onSave={async () => {
+                  await handleSave()
+                }}
+                isSaving={isSaving}
+                onPersonalizationSaveReady={(saveFn) => {
+                  setSavePersonalizationFn(() => saveFn)
+                }}
+              />
+            )}
+          </TabsContent>
 
-      {/* Navigation Buttons */}
-      <div className="flex items-center justify-between pt-6 border-t">
-        <div>
-          {currentStep > 1 && (
-            <Button
-              variant="outline"
-              onClick={handlePrevious}
-              disabled={isSaving}
-            >
-              <ChevronLeft className="size-4 mr-2" />
-              Précédent
-            </Button>
-          )}
+          <TabsContent value="3" className="mt-0">
+            {draftForm && (
+              <FormPublishContent
+                form={draftForm}
+                isDraft={!currentFormId}
+                title={title}
+                description={description}
+                questions={questions}
+                sections={sections}
+                onSave={async () => {
+                  await handleSave()
+                }}
+                isSaving={isSaving}
+              />
+            )}
+          </TabsContent>
         </div>
-        <div className="flex gap-2">
+      </Tabs>
+
+      {/* Action Buttons */}
+      <div className="flex items-center justify-end gap-2 pt-6 border-t">
+        <Button
+          variant="outline"
+          onClick={() => router.push("/dashboard/forms")}
+          disabled={isSaving}
+        >
+          {isEditingExistingForm ? "Retour" : "Annuler"}
+        </Button>
+        
+        {activeTab === "1" && (
           <Button
-            variant="outline"
-            onClick={() => router.push("/dashboard/forms")}
-            disabled={isSaving}
+            onClick={handleSave}
+            disabled={isSaving || !title.trim()}
           >
-            Annuler
+            {isSaving ? "Enregistrement..." : "Enregistrer"}
           </Button>
-          {currentStep < 3 && (
-            <Button
-              onClick={handleNext}
-              disabled={isSaving || !canProceedToNextStep()}
-            >
-              {currentStep === 1 ? "Enregistrer et continuer" : "Suivant"}
-              <ChevronRight className="size-4 ml-2" />
-            </Button>
-          )}
-        </div>
+        )}
       </div>
     </div>
   )

@@ -93,7 +93,7 @@ export function FormBuilderContent({
       type,
       text: "",
       required: false,
-      options: type === "single_choice" || type === "multiple_choice" ? [] : undefined,
+      options: type === "single_choice" || type === "multiple_choice" ? [] : null,
       section_id: sectionId || null,
     }
 

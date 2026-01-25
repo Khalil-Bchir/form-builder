@@ -52,6 +52,9 @@ export function AddQuestionButton({
               <SelectItem value="multiple_choice">
                 {getQuestionTypeEmoji("multiple_choice")} {getQuestionTypeLabel("multiple_choice")}
               </SelectItem>
+              <SelectItem value="rating">
+                {getQuestionTypeEmoji("rating")} {getQuestionTypeLabel("rating")}
+              </SelectItem>
             </SelectContent>
           </Select>
           <Button
